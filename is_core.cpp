@@ -1,6 +1,7 @@
 #include "is_pch.h"
 
 #include "is_header_all.h"
+#include "is_texture.h"
 
 namespace is{
 namespace GLUT{
@@ -29,13 +30,29 @@ namespace is{
 		glClearColor(0,0,0,0);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glEnable(GL_BLEND);
+		glEnable(GL_TEXTURE_2D);
 		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		for (auto itr = data_list.begin(); 
 				itr != data_list.end(); itr++){
 			view* v = (*itr)->default_view();
 			v->update(s, *itr);
 		}
+
+		text_texture tex_gen;
+		size tex_size = {256, 12};
+		GLuint tex = tex_gen.generate(tex_size, "test the ppyy.");
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glColor4f(1,0,0,1);
+		glBegin(GL_TRIANGLE_FAN);
+		glTexCoord2f(0,1);	glVertex2f(0,0);
+		glTexCoord2f(0,0);	glVertex2f(0,12);
+		glTexCoord2f(1,0);	glVertex2f(256,12);
+		glTexCoord2f(1,1);	glVertex2f(256,0);
+		glEnd();
+		glBindTexture(GL_TEXTURE_2D, 0);
+
 		glutSwapBuffers();
 	}
 

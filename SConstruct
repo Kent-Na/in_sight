@@ -19,9 +19,9 @@ env = Environment(
 env.Append(CCFLAGS = ['-Wall','-g','-O3'])
 env.Append(CFLAGS = ['-Wno-pointer-sign','-Wno-deprecated-declarations'])
 env.Append(CXXFLAGS = ['-xc++','-std=gnu++0x'])
-env.Append(LIBS = ['m','GL','glut'])
+env.Append(LIBS = ['m','GL','glut','freetype'])
 env.Append(LIBPATH = ['/usr/local/pgsql/lib'])
-env.Append(CPPPATH = ['/usr/local/pgsql/include'])
+env.Append(CPPPATH = ['/usr/local/pgsql/include', '/usr/include/freetype2'])
 
 Export('env')
 
