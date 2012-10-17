@@ -1,15 +1,15 @@
 namespace is{
-	class data;
-	class view_1d_bar_graph;
+	class Data;
+	class View_1d_bar_graph;
 
-	class data_1d:public data{
+	class Data_1d:public Data{
 		std::vector<double> data;
 
 		public:
 
-		view* default_view();
+		View* default_view();
 
-		data_1d(core *c, double* d, size_t len){
+		Data_1d(Core *c, double* d, size_t len){
 			data.insert(data.begin(), d, d+len);
 			c->add_data(this);
 		}
@@ -27,29 +27,29 @@ namespace is{
 		}
 	};
 
-	class view_1d_graph_base:public view{
+	class View_1d_graph_base:public View{
 
 		public:
 
 		size_t grid_interval;	
 		size_t idx_start;
 
-		view_1d_graph_base(){
+		View_1d_graph_base(){
 			grid_interval = 30;
 			idx_start = 0;
 		}
 
-		size_t idx_end(size s, data* d) const{
-			data_1d* data = (data_1d*)d;
+		size_t idx_end(Size s) const{
+			const Data_1d* data = (Data_1d*)this->data;
 			return std::min(idx_start+s.w, data->size());
 		}
 
-		size_t visible_count(size s, data* d) const{
-			data_1d* data = (data_1d*)d;
+		size_t visible_count(Size s) const{
+			const Data_1d* data = (Data_1d*)this->data;
 			return std::min(s.w, data->size() - idx_start);
 		}
 
-		void update_grid(size s, data* d) const{
+		void update_grid(Size s) const{
 			if (grid_interval == 0)
 				return;
 
@@ -59,22 +59,29 @@ namespace is{
 
 			glBegin(GL_LINES);
 			for (size_t i = grid_start; 
-					i<visible_count(s, d); i+=grid_interval){
+					i<visible_count(s); i+=grid_interval){
 				glVertex2d(i, 0);
 				glVertex2d(i, s.h);
 			}
 			glEnd();
 		}
+
+		void update_invalid(Size s) const{
+			color::invalid();
+			draw_rect(visible_count(s), 0, 
+					s.w-visible_count(s), s.h);
+		}
 	};
 
-	class view_1d_bar_graph:public view_1d_graph_base{
+	class View_1d_bar_graph:public View_1d_graph_base{
 		
-		void update(size &s, data* d) const{
-			const size_t idx_end = this->idx_end(s, d);
+		void update(Size s) const{
+			const size_t idx_end = this->idx_end(s);
 
-			update_grid(s, d);
+			update_grid(s);
+			update_invalid(s);
 
-			const data_1d* data = (data_1d*)d;
+			const Data_1d* data = (Data_1d*)this->data;
 
 			const double max_value = data->max_value();
 			const double min_value = data->min_value();
@@ -83,7 +90,7 @@ namespace is{
 			color::value();
 
 			glBegin(GL_LINES);
-			for (size_t i = 0; i<visible_count(s, d); i++){
+			for (size_t i = 0; i<visible_count(s); i++){
 				const double value = (*data)[i+idx_start];
 				const double scaled = (value-min_value)*scale;
 				glVertex2d(i, 0.0);
@@ -109,7 +116,7 @@ namespace is{
 		}
 	};
 
-	view* data_1d::default_view(){
-		return new view_1d_bar_graph;
+	View* Data_1d::default_view(){
+		return new View_1d_bar_graph;
 	}
 }

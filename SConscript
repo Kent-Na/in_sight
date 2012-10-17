@@ -3,7 +3,8 @@ Import('env')
 
 mainFiles = [
 	'is_core.cpp',
-	'is_texture.cpp'
+	'is_texture.cpp',
+	'is_graphics.cpp'
 ]
 
 main = ['simple_test.cpp']

@@ -20,7 +20,17 @@ namespace is{
 		return tex;
 	}
 
-	text_texture::text_texture(){
+	void draw_texture(GLuint tex, double x, double y, double w, double h){
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glBegin(GL_TRIANGLE_FAN);
+		glTexCoord2f(0,1);	glVertex2f(x+0,y+0);
+		glTexCoord2f(0,0);	glVertex2f(x+0,y+h);
+		glTexCoord2f(1,0);	glVertex2f(x+w,y+h);
+		glTexCoord2f(1,1);	glVertex2f(x+w,y+0);
+		glEnd();
+	}
+
+	Text_texture::Text_texture(){
 		const char* font_name = 
 			"/usr/share/fonts/TTF/DejaVuSans.ttf";
 		FT_Error error;
@@ -28,23 +38,23 @@ namespace is{
 		error = FT_New_Face(lib, font_name, 0, &face);
 	}
 
-	text_texture::~text_texture(){
+	Text_texture::~Text_texture(){
 		FT_Done_Face(face);
 		FT_Done_FreeType(lib);
 	}
 
-	GLuint text_texture::generate(size &s, const char* text){
+	GLuint Text_texture::generate(Size &s, const char* text){
 		//init freetype
 		FT_Error error;
 
-		error = FT_Set_Pixel_Sizes(face, 0, s.h);
+		error = FT_Set_Pixel_Sizes(face, 0, s.h*0.9);
 
 		uint8_t *out_bitmap = (uint8_t*)malloc(s.h*s.w);
 		memset(out_bitmap,0,s.h*s.w);
 
 		const char* itr = text;
 		size_t x_0 = 0;
-		size_t y_0 = s.h*0.75;
+		size_t y_0 = s.h*0.8;
 		while (*itr){
 			FT_UInt glyph_idx = FT_Get_Char_Index(face, *itr);
 			error = FT_Load_Glyph(face, glyph_idx, FT_LOAD_DEFAULT);
