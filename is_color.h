@@ -16,7 +16,7 @@ namespace is{
 		}
 
 		inline void light_hilight(){
-			glColor4d(0.77, 0.72 ,0.0, 1.0);
+			glColor4d(0.77, 0.62 ,0.0, 1.0);
 		}
 
 		inline void text(){

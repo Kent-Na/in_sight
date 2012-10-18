@@ -11,6 +11,8 @@
 
 int main(int argc, char** argv)
 {
+	is::GLUT::init(argc,argv);
+
 	auto c = new is::Core;
 
 	double data[256];
@@ -24,7 +26,9 @@ int main(int argc, char** argv)
 	}
 	new is::Data_1d(c, data, 256);
 
-	c->run_GLUT(argc, argv);
+	new is::GLUT::Window(c);
+
+	is::GLUT::run();
 
 	return 0;
 }

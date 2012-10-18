@@ -9,45 +9,119 @@
 
 namespace is{
 namespace GLUT{
-	Core* shared_core = NULL;
+
+	std::map<int,Window*> window_map;
 
 	void display(){
-		if (!shared_core)
-			return;
+		int window_id = glutGetWindow();
+		Window *window = window_map[window_id];
 
-		shared_core->update((Size){640, 480});
+		Size s;
+		s.w = glutGet(GLUT_WINDOW_WIDTH);
+		s.h = glutGet(GLUT_WINDOW_HEIGHT);
+
+		window->update(s);
+
+		glutSwapBuffers();
+	}
+
+	void mouse(int Button, int State, int x, int y){
+		if (State != GLUT_UP)
+			return;
+		int window_id = glutGetWindow();
+		Window *window = window_map[window_id];
+
+		Size s;
+		s.w = glutGet(GLUT_WINDOW_WIDTH);
+		s.h = glutGet(GLUT_WINDOW_HEIGHT);
+
+		Point p = {x, s.h-y};
+
+		window->mouse(s, p);
+		window->update(s);
+		glutSwapBuffers();
 	}
 
 	void keyboard(unsigned char Key, int x, int y){
+		int window_id = glutGetWindow();
+		Window *window = window_map[window_id];
+
 		exit(0);
 	}
+
+	void init(int argc, char** argv){
+		glutInit(&argc, argv);
+	}
+	void run(){
+		glutMainLoop();
+	}
+
+	//It is GLUT window.
+	Window::Window(Core *c){
+		int old_window_id = glutGetWindow();
+
+		glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
+		glutInitWindowSize(640, 480);
+		glutCreateWindow("In side of my brain");
+
+		int window_id = glutGetWindow();
+		window_map[window_id] = this;
+
+		core = c;
+
+		glutDisplayFunc(is::GLUT::display);
+		glutKeyboardFunc(is::GLUT::keyboard);
+		glutMouseFunc(is::GLUT::mouse);
+		glutSwapBuffers();
+		if (old_window_id != 0)
+			glutSetWindow(old_window_id);
+	}
 }}
+
 
 namespace is{
 
 	void Core::update(Size s){
+		
+	}
+
+	void Window::setup_matrix(Size s){
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 		glMatrixMode(GL_VIEWPORT);
 		glLoadIdentity();
-		glOrtho(0, 640, 0, 480, -100, 100);
+		glOrtho(0, s.w, 0, s.h, -100, 100);
+	}
+
+	void Window::setup_GL_option(){
 		glClearColor(0,0,0,0);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glEnable(GL_BLEND);
 		glEnable(GL_TEXTURE_2D);
 		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
 
+	void Window::update(Size s){
+
+		setup_matrix(s);
+		setup_GL_option();
+
+		glBindTexture(GL_TEXTURE_2D,0);
 		color::background();
 		draw_rect(0,0,s.w,s.h);
 
 		const size_t list_w = 84;
+		
+		Data_list &data_list = core->get_data_list();
 
 		Virtical_layouter layouter;
 		for (auto itr = data_list.begin(); 
 				itr != data_list.end(); itr++){
-			View* v = (*itr)->default_view();
-			v->data = *itr;
+			if (!(itr->flag&visible))
+				continue;
+			View* v = itr->data->default_view();
+			v->data = itr->data;
 			layouter.add_view(v);
 		}
 
@@ -59,41 +133,20 @@ namespace is{
 		layouter.update(vs);
 		glPopMatrix();
 
-/*
-		for (auto itr = data_list.begin(); 
-				itr != data_list.end(); itr++){
-			View* v = (*itr)->default_view();
-			Size vs = {s.w-list_w, s.h};
-			v->update(vs, *itr);
-			glPopMatrix();
-		}
-		*/
-
-		Data_list dl;
+		Data_list_view dl;
 		Size dls = {list_w, s.h};
-		dl.update(this, dls);
-
-		glutSwapBuffers();
+		dl.update(data_list, dls);
 	}
 
-	void Core::run_GLUT(int argc, char** argv){
-		if (GLUT::shared_core){
-			printf("err. run_GLUT can not handle multi core object.");
-			return;
-		}
-		GLUT::shared_core = this;
+	void Window::mouse(Size s, Point p){
+		const size_t list_w = 84;
+		Data_list_view dl;
+		Size dls = {list_w, s.h};
 
-		glutInit(&argc, argv);
-
-		glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
-		glutInitWindowSize(640, 480);
-		glutCreateWindow("In side of my brain");
-
-		glutDisplayFunc(GLUT::display);
-		glutKeyboardFunc(GLUT::keyboard);
-		glutSwapBuffers();
-		glutMainLoop();
+		Data_list &data_list = core->get_data_list();
+		dl.select(data_list, s, p);
 	}
+
 }
 
 

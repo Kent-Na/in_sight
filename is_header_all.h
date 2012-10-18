@@ -39,6 +39,19 @@ namespace is{
 		virtual View* default_view() { return NULL; }
 	};
 
+	enum data_flag : uint32_t{
+		visible = 1<<0
+	};
+
+	struct Data_with_flags{
+		Data* data;
+		uint32_t flag;
+		Data_with_flags(Data* d, uint32_t f):data(d),flag(f) {};
+		Data_with_flags(Data* d):data(d),flag(0) {};
+	};
+
+	using Data_list = std::vector<Data_with_flags>;
+
 	class Image_info:public Data{
 		size_t width;
 		size_t height;
@@ -80,6 +93,11 @@ namespace is{
 	struct Size{
 		size_t w;
 		size_t h;
+	};
+
+	struct Point{
+		size_t x;
+		size_t y;
 	};
 
 	class View{
@@ -147,9 +165,4 @@ namespace is{
 			}
 		}
 	};
-
-	class Window{
-		void update();
-	};
-
 }
