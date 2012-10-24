@@ -1,5 +1,6 @@
 namespace is{
 	class Core{
+		std::map<std::string,size_t> scale;
 		//std::vector<Data*> data_list;
 		Data_list data_list;
 		Text_texture tt;
@@ -13,6 +14,14 @@ namespace is{
 			return data_list;
 		}
 		void update(Size s);
+
+		size_t get_scale(std::string name){
+			return scale[name];
+		}
+		void get_scale(std::string name, size_t value){
+			scale[name] = value;
+		}
+
 		void run_GLUT(int argc, char** argv);
 	};
 

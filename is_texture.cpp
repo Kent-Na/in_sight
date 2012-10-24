@@ -31,11 +31,20 @@ namespace is{
 	}
 
 	Text_texture::Text_texture(){
-		const char* font_name = 
-			"/usr/share/fonts/TTF/DejaVuSans.ttf";
 		FT_Error error;
 		error = FT_Init_FreeType(&lib);
-		error = FT_New_Face(lib, font_name, 0, &face);
+		const char* font_name[] = {
+			"/usr/share/fonts/TTF/DejaVuSans.ttf",
+			"/System/Library/Fonts/Helvetica.dfont",
+		};
+		for (int i=0; i<2; i++){
+			error = FT_New_Face(lib, font_name[i], 0, &face);
+			if (error == 0)
+				return;
+		}
+
+		printf("no font\n");
+		exit(0);
 	}
 
 	Text_texture::~Text_texture(){

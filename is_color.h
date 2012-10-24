@@ -7,7 +7,8 @@ namespace is{
 
 		inline void light_background(){
 			double l = 0.57;
-			glColor4d(l, l, l*0.75, 1.0);
+			//glColor4d(l, l, l*0.75, 1.0);
+			glColor4d(l, l, l, 1.0);
 		}
 
 		inline void light_text(){
