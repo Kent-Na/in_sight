@@ -1,6 +1,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <sstream>
 
 #include <GL/gl.h>
 #include <GL/glut.h>

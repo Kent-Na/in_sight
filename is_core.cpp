@@ -1,11 +1,13 @@
 #include "is_pch.h"
 
 #include "is_header_all.h"
+#include "is_layouter.h"
 #include "is_texture.h"
 #include "is_core.h"
 #include "is_color.h"
 #include "is_graphics.h"
 #include "is_data_list.h"
+#include "is_data_1d.h"
 
 namespace is{
 namespace GLUT{
@@ -21,7 +23,6 @@ namespace GLUT{
 		s.h = glutGet(GLUT_WINDOW_HEIGHT);
 
 		window->update(s);
-
 		glutSwapBuffers();
 	}
 
@@ -115,13 +116,18 @@ namespace is{
 		
 		Data_list &data_list = core->get_data_list();
 
-		Virtical_layouter layouter;
+		Virtical_layouter_v1 layouter;
 		for (auto itr = data_list.begin(); 
 				itr != data_list.end(); itr++){
 			if (!(itr->flag&visible))
 				continue;
 			View* v = itr->data->default_view();
 			v->data = itr->data;
+			layouter.add_view(v);
+		}
+
+		{
+			View* v = new View_param_bar();
 			layouter.add_view(v);
 		}
 

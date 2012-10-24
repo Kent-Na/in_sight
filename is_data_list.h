@@ -19,7 +19,7 @@ namespace is{
 			for (size_t i = 0; i<data_list.size(); i++){
 				Data* d = data_list[i].data;
 				uint32_t f = data_list[i].flag;
-				GLuint tex  = tex_gen.generate(tex_size, d->name.c_str());
+				GLuint tex  = tex_gen.generate(tex_size, d->name().c_str());
 				if (f&visible){
 					color::light_hilight();
 					draw_texture(0, 0, i*text_size, w, text_size);
@@ -30,12 +30,13 @@ namespace is{
 					color::light_text();
 					draw_texture(tex, 0, i*text_size, w, text_size);
 				}
+				glDeleteTextures(1,&tex);
 			}
 		}
 		void select(Data_list &data_list, Size s, Point p){
 			size_t idx = p.y/text_size;
 			
-			if (idx >= 0 && idx<data_list.size()){
+			if (idx<data_list.size()){
 				data_list[idx].flag ^= visible;
 			}
 		}

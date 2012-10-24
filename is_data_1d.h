@@ -25,7 +25,41 @@ namespace is{
 		double operator [] (size_t idx) const{
 			return data[idx];
 		}
+
+		//Be careful. It will make system broken.
+		std::vector<double>& raw_data(){
+			return data;
+		}
 	};
+
+	//in_place filter
+	inline void filter_1d_MA_LPF(
+			double *data, size_t length, size_t kernel_size){
+		const size_t end = length-kernel_size;
+		double s = 1.0/kernel_size;
+		for (size_t i=0; i<end; i++){
+			double sum = 0;
+			for (size_t j = 0; j<kernel_size; j++){
+				sum += data[i+j];
+			}
+			data[i]=sum*s;
+		}
+	}
+
+	//in_place filter
+	inline void filter_1d_MA_HPF(
+			double *data, size_t length, size_t kernel_size){
+		const size_t end = length-kernel_size;
+		double s = 1.0/kernel_size;
+		size_t half_kernel_size = kernel_size/2;
+		for (size_t i=0; i<end; i++){
+			double sum = 0;
+			for (size_t j = 0; j<kernel_size; j++){
+				sum += data[i+j];
+			}
+			data[i]=data[i+half_kernel_size]-sum*s;
+		}
+	}
 
 	class View_1d_graph_base:public View{
 
@@ -37,6 +71,10 @@ namespace is{
 		View_1d_graph_base(){
 			grid_interval = 30;
 			idx_start = 0;
+		}
+
+		size_t min_h(){
+			return 32;
 		}
 
 		size_t idx_end(Size s) const{
@@ -74,6 +112,7 @@ namespace is{
 	};
 
 	class View_1d_bar_graph:public View_1d_graph_base{
+		public:
 		
 		void update(Size s) const{
 			const size_t idx_end = this->idx_end(s);
@@ -116,7 +155,66 @@ namespace is{
 		}
 	};
 
-	View* Data_1d::default_view(){
+	inline View* Data_1d::default_view(){
 		return new View_1d_bar_graph;
 	}
+
+	class Filter_1d_MA_LPF:public Data{
+		Data_1d *input;
+		Data_1d *output;
+
+		size_t kernel_size;
+		public:
+
+		View* default_view();
+
+		void apply(){
+			std::vector<double> &input_data = input->raw_data();
+			std::vector<double> &output_data = output->raw_data();
+			output_data.clear();
+			output_data.insert(output_data.begin(), input_data.begin(), 
+					input_data.end());
+			filter_1d_MA_LPF(&output_data.front(), output_data.size(), 12);
+		}
+	};
+
+	class View_filter_1d_MA_LPF:public View{
+
+		void update(Size s) const{
+			const size_t header_size = 14;
+
+			View_1d_bar_graph data_view;
+			Size data_view_size = {s.w, s.h-header_size};
+			data_view.update(data_view_size);
+		}
+	};
+
+	class View_param_bar:public View{
+
+		size_t min_h(){
+			return 14;
+		}
+
+		size_t max_h(){
+			return 14;
+		}
+
+		void update(Size s) const{
+			const size_t header_size = 14;
+			std::stringstream s_s;
+			s_s << "size = " << 100;
+			std::string str = s_s.str();
+			Text_texture tex_gen;
+			Size tex_s = {128,14};
+			GLuint tex = tex_gen.generate(tex_s, str.c_str());
+			color::text();
+			draw_texture(tex, 0, 0, tex_s.w, tex_s.h);
+			glDeleteTextures(1, &tex);
+		}
+	};
+
+	inline View* Filter_1d_MA_LPF::default_view(){
+		return new View_filter_1d_MA_LPF;
+	}
+
 }

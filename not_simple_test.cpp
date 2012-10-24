@@ -17,15 +17,23 @@ int main(int argc, char** argv)
 
 	//sin wave
 	for (int i = 0; i<256; i++){
-		data[i] = cos(i/10.0);
+		data[i] = cos(i/3.0) + sin(i/6.0);
 	}
-	new is::Data_1d(c, data, 256);
+	(new is::Data_1d(c, data, 256))->name("original");
 
-	//cos wave
+	is::filter_1d_MA_LPF(data, 256, 13);
+	(new is::Data_1d(c, data, 256-13))->name("LPF");
+
 	for (int i = 0; i<256; i++){
-		data[i] = sin(i/20.0);
+		data[i] = cos(i/3.0) + sin(i/6.0);
 	}
-	new is::Data_1d(c, data, 256);
+	is::filter_1d_MA_HPF(data, 256, 13);
+	(new is::Data_1d(c, data, 256-13))->name("HPF");
+
+	for (int i = 0; i<256; i++){
+		data[i] = i%33;
+	}
+	(new is::Data_1d(c, data, 256-13))->name("try wave");
 
 	new is::GLUT::Window(c);
 

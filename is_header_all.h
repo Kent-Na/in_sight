@@ -7,7 +7,7 @@ namespace is{
 	class Node;
 
 	class View;
-	class Frame;
+	struct Frame;
 	class Layouter;
 	class Window;
 
@@ -31,12 +31,20 @@ namespace is{
 
 	class Data{
 		public:
-		std::string name;
+		std::string _name;
 		Data(){
-			name = "dummy";
+			_name = "dummy";
 		}
 		//create and return new default view
 		virtual View* default_view() { return NULL; }
+		Data* name(std::string str){
+			_name = str;
+			return this;
+		}
+
+		std::string name(){
+			return _name;
+		}
 	};
 
 	enum data_flag : uint32_t{
@@ -103,10 +111,10 @@ namespace is{
 	class View{
 		public:
 		Data* data;
-		virtual size_t minWidth() { return 0; }
-		virtual size_t maxWidth() { return 0; }
-		virtual size_t minHeight() { return 0; }
-		virtual size_t maxHeight() { return 0; }
+		virtual size_t min_h() { return 0; }
+		virtual size_t max_h() { return 1000; }
+		virtual size_t min_w() { return 0; }
+		virtual size_t max_w() { return 0; }
 
 		virtual void update(Size s) const { return; }
 
@@ -133,36 +141,4 @@ namespace is{
 		}
 	};
 
-	class Layouter{
-		protected:
-		std::vector<View*> views;
-		std::vector<Frame> frames;
-
-		public:
-		void add_view(View* view){
-			views.push_back(view);
-		}
-		virtual void layout(Size s) { return; }
-		void update(Size s){
-			for (auto itr = frames.begin(); itr != frames.end(); itr++){
-				itr->update();
-			}
-		}
-	};
-
-	class Virtical_layouter: public Layouter{
-		public:
-		void layout(Size s){
-			double cell_h = s.h/(double)views.size();
-			for (size_t i=0; i<views.size(); i++){
-				Frame f;
-				f.x = 0;
-				f.w = s.w;
-				f.y = ceil(cell_h*i);
-				f.h = ceil(cell_h);
-				f.view = views[i];
-				frames.push_back(f);
-			}
-		}
-	};
 }
