@@ -16,9 +16,11 @@ namespace is{
 		void update(Size s);
 
 		size_t get_scale(std::string name){
-			return scale[name];
+			if (scale.count(name))
+				return scale[name];
+			return 0;
 		}
-		void get_scale(std::string name, size_t value){
+		void set_scale(std::string name, size_t value){
 			scale[name] = value;
 		}
 
@@ -32,6 +34,7 @@ namespace is{
 		Core *core;
 		void update(Size s);
 		void mouse(Size s, Point p);
+		void mouse_move(Size s, Point p);
 	};
 }
 

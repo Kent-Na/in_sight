@@ -8,7 +8,8 @@ namespace is{
 		public:
 		void add_view(View* view);
 		virtual void layout(Size s);
-		void update(Size s);
+		void update(Core *c,Size s);
+		void mouse_move(Core *c,Size s, Point p);
 	};
 
 	class Virtical_layouter: public Layouter{

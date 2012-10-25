@@ -4,6 +4,7 @@ namespace is{
 
 	class Data_1d:public Data{
 		std::vector<double> data;
+		std::string _scale_name;
 
 		public:
 
@@ -13,6 +14,16 @@ namespace is{
 			data.insert(data.begin(), d, d+len);
 			c->add_data(this);
 		}
+
+		Data_1d* scale_name(std::string value){
+			_scale_name = value;
+			return this;
+		}
+
+		std::string scale_name() const{
+			return _scale_name;
+		}
+
 		size_t size() const{
 			return data.size();
 		}
@@ -109,12 +120,18 @@ namespace is{
 			draw_rect(visible_count(s), 0, 
 					s.w-visible_count(s), s.h);
 		}
+
+		void mouse_move(Core *c,Size s, Point p) const{
+			const Data_1d* data = (Data_1d*)this->data;
+			std::string s_name = data->scale_name();
+			c->set_scale(s_name, idx_start+p.x);
+		}
 	};
 
 	class View_1d_bar_graph:public View_1d_graph_base{
 		public:
 		
-		void update(Size s) const{
+		void update(Core *c,Size s) const{
 			const size_t idx_end = this->idx_end(s);
 
 			update_grid(s);
@@ -136,8 +153,9 @@ namespace is{
 				glVertex2d(i, scaled);
 			}
 			glEnd();
-			
-			size_t forcused_idx = 20;
+		
+			std::string s_name = data->scale_name();
+			size_t forcused_idx = c->get_scale(s_name);
 			if (forcused_idx >= idx_start && forcused_idx < idx_end){
 				const double value = (*data)[forcused_idx];
 				const double scaled = (value-min_value)*scale;
@@ -180,12 +198,12 @@ namespace is{
 
 	class View_filter_1d_MA_LPF:public View{
 
-		void update(Size s) const{
+		void update(Core *c, Size s) const{
 			const size_t header_size = 14;
 
 			View_1d_bar_graph data_view;
 			Size data_view_size = {s.w, s.h-header_size};
-			data_view.update(data_view_size);
+			data_view.update(c, data_view_size);
 		}
 	};
 
@@ -199,7 +217,7 @@ namespace is{
 			return 14;
 		}
 
-		void update(Size s) const{
+		void update(Core *c, Size s) const{
 			const size_t header_size = 14;
 			std::stringstream s_s;
 			s_s << "size = " << 100;

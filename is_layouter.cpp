@@ -11,9 +11,18 @@ namespace is{
 	void Layouter::layout(Size s){
 		return; 
 	}
-	void Layouter::update(Size s){
+	void Layouter::update(Core *c, Size s){
 		for (auto itr = frames.begin(); itr != frames.end(); itr++){
-			itr->update();
+			itr->update(c);
+		}
+	}
+	void Layouter::mouse_move(Core *c,Size s, Point p){
+		for (auto itr = frames.begin(); itr != frames.end(); itr++){
+			Rect r(itr->x, itr->y, itr->w, itr->h);
+			if (r.in_side(p)){
+				itr->mouse_move(c,p);
+				return;
+			}
 		}
 	}
 

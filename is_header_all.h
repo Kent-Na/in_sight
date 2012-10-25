@@ -6,6 +6,7 @@ namespace is{
 	class Data;
 	class Node;
 
+	class Core;
 	class View;
 	struct Frame;
 	class Layouter;
@@ -108,6 +109,35 @@ namespace is{
 		size_t y;
 	};
 
+	struct Rect{
+		Point p;
+		Size s;
+		Rect(Point p, Size s){
+			this->p = p;
+			this->s = s;
+		}
+		Rect(Point p0, Point p1){
+			p.x = std::min(p0.x, p1.x);
+			p.y = std::min(p0.y, p1.y);
+			s.w = std::max(p0.x, p1.x) - p.x;
+			s.h = std::max(p0.y, p1.y) - p.y;
+		}
+		Rect(size_t x, size_t y, size_t w, size_t h){
+			p.x = x;
+			p.y = y;
+			s.w = w;
+			s.h = h;
+		}
+
+		bool in_side(Point p0){
+			bool cond0 = p.x <= p0.x;
+			bool cond1 = p.y <= p0.y;
+			bool cond2 = p.x+s.w >= p0.x;
+			bool cond3 = p.y+s.h >= p0.y;
+			return cond0 && cond1 && cond2 && cond3;
+		}
+	};
+
 	class View{
 		public:
 		Data* data;
@@ -116,12 +146,8 @@ namespace is{
 		virtual size_t min_w() { return 0; }
 		virtual size_t max_w() { return 0; }
 
-		virtual void update(Size s) const { return; }
-
-		//view never have output
-		virtual size_t output_count() { return 0; }
-		virtual Data_class<>* output_type_at(size_t idx) { return NULL; }
-		virtual void set_output(size_t idx, Data data) { return; }
+		virtual void update(Core *c, Size s) const { return; }
+		virtual void mouse_move(Core *c, Size s, Point p) const { return; }
 	};
 
 
@@ -132,12 +158,17 @@ namespace is{
 		size_t h;
 
 		View* view;
-		void update(){
+		void update(Core *c) const {
 			glPushMatrix();
 			glTranslated(x,y,0);
 			Size s = {w, h};
-			view->update(s);
+			view->update(c, s);
 			glPopMatrix();
+		}
+		void mouse_move(Core *c, Point p) const { 
+			Size s = {w, h};
+			Point pv = {p.x-x, p.y-y};
+			view->mouse_move(c,s,pv);
 		}
 	};
 

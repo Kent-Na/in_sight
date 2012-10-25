@@ -43,6 +43,25 @@ namespace GLUT{
 		glutSwapBuffers();
 	}
 
+	void motion(int x, int y){
+
+	}
+
+	void passive_motion(int x, int y){
+		int window_id = glutGetWindow();
+		Window *window = window_map[window_id];
+
+		Size s;
+		s.w = glutGet(GLUT_WINDOW_WIDTH);
+		s.h = glutGet(GLUT_WINDOW_HEIGHT);
+
+		Point p = {x, s.h-y};
+
+		window->mouse_move(s, p);
+		window->update(s);
+		glutSwapBuffers();
+	}
+
 	void keyboard(unsigned char Key, int x, int y){
 		int window_id = glutGetWindow();
 		Window *window = window_map[window_id];
@@ -73,6 +92,8 @@ namespace GLUT{
 		glutDisplayFunc(is::GLUT::display);
 		glutKeyboardFunc(is::GLUT::keyboard);
 		glutMouseFunc(is::GLUT::mouse);
+		glutMotionFunc(is::GLUT::motion);
+		glutPassiveMotionFunc(is::GLUT::passive_motion);
 		glutSwapBuffers();
 		if (old_window_id != 0)
 			glutSetWindow(old_window_id);
@@ -136,7 +157,7 @@ namespace is{
 
 		glPushMatrix();
 		glTranslated(list_w, 0, 0);
-		layouter.update(vs);
+		layouter.update(core, vs);
 		glPopMatrix();
 
 		Data_list_view dl;
@@ -147,10 +168,40 @@ namespace is{
 	void Window::mouse(Size s, Point p){
 		const size_t list_w = 84;
 		Data_list_view dl;
-		Size dls = {list_w, s.h};
+		Rect dlr(0,0,list_w, s.h);
+
+		if (dlr.in_side(p)){
+			Data_list &data_list = core->get_data_list();
+			dl.select(data_list, s, p);
+		}
+	}
+
+	void Window::mouse_move(Size s, Point p){
+		const size_t list_w = 84;
+		Rect dlr(0,0,list_w, s.h);
 
 		Data_list &data_list = core->get_data_list();
-		dl.select(data_list, s, p);
+		Virtical_layouter_v1 layouter;
+		for (auto itr = data_list.begin(); 
+				itr != data_list.end(); itr++){
+			if (!(itr->flag&visible))
+				continue;
+			View* v = itr->data->default_view();
+			v->data = itr->data;
+			layouter.add_view(v);
+		}
+
+		{
+			View* v = new View_param_bar();
+			layouter.add_view(v);
+		}
+
+		Size vs = {s.w-list_w, s.h};
+		Point vp = {p.x-list_w, p.y};
+		layouter.layout(vs);
+		if (not dlr.in_side(p)){
+			layouter.mouse_move(core, vs, vp);
+		}
 	}
 
 }
