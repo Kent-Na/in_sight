@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <sstream>
 
-#include <openGL/gl.h>
-#include <GLUT/glut.h>
+#include <GL/gl.h>
+#include <GL/glut.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

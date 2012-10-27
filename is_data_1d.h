@@ -121,6 +121,30 @@ namespace is{
 					s.w-visible_count(s), s.h);
 		}
 
+		void update_header(Core *c, Size s) const{
+			const Data_1d* data = (Data_1d*)this->data;
+
+			const size_t header_size = 14;
+			std::stringstream s_s;
+
+			std::string s_name = data->scale_name();
+			size_t forcused_idx = c->get_scale(s_name);
+
+			s_s << s_name << "[" << forcused_idx << "] = ";
+			if (forcused_idx >= idx_start && forcused_idx < idx_end(s)){
+				const double value = (*data)[forcused_idx];
+				s_s << value;
+			}
+
+			std::string str = s_s.str();
+			Text_texture tex_gen;
+			Size tex_s = {128,14};
+			GLuint tex = tex_gen.generate(tex_s, str.c_str());
+			color::text();
+			draw_texture(tex, 0, 0, tex_s.w, tex_s.h);
+			glDeleteTextures(1, &tex);
+		}
+
 		void mouse_move(Core *c,Size s, Point p) const{
 			const Data_1d* data = (Data_1d*)this->data;
 			std::string s_name = data->scale_name();
@@ -130,13 +154,8 @@ namespace is{
 
 	class View_1d_bar_graph:public View_1d_graph_base{
 		public:
-		
-		void update(Core *c,Size s) const{
+		void update_data(Core *c,Size s) const{
 			const size_t idx_end = this->idx_end(s);
-
-			update_grid(s);
-			update_invalid(s);
-
 			const Data_1d* data = (Data_1d*)this->data;
 
 			const double max_value = data->max_value();
@@ -149,8 +168,8 @@ namespace is{
 			for (size_t i = 0; i<visible_count(s); i++){
 				const double value = (*data)[i+idx_start];
 				const double scaled = (value-min_value)*scale;
-				glVertex2d(i, 0.0);
-				glVertex2d(i, scaled);
+				glVertex2d(i+1, 0.0);
+				glVertex2d(i+1, scaled);
 			}
 			glEnd();
 		
@@ -171,6 +190,19 @@ namespace is{
 				glEnd();
 			}
 		}
+		
+		void update(Core *c,Size s) const{
+			Size vs(s.w, s.h-14);
+			update_grid(vs);
+			update_invalid(vs);
+			update_data(c,Size(s.w,s.h-14));
+
+			glPushMatrix();
+			glTranslated(0,s.h-14,0);
+			update_header(c, s);
+			glPopMatrix();
+		}
+
 	};
 
 	inline View* Data_1d::default_view(){

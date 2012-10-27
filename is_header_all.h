@@ -102,6 +102,11 @@ namespace is{
 	struct Size{
 		size_t w;
 		size_t h;
+		Size(){ }
+		Size(size_t w0, size_t h0){
+			w = w0;
+			h = h0;
+		}
 	};
 
 	struct Point{

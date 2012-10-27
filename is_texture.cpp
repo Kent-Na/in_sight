@@ -72,6 +72,7 @@ namespace is{
 		
 			const size_t x_t = x_0 + face->glyph->bitmap_left;
 			const size_t y_t = y_0 - face->glyph->bitmap_top;
+			if (not (x_t<s.w)) break;
 			const size_t w = std::min(x_t+bitmap.width, s.w)-x_t;
 			const size_t h = std::min(y_t+bitmap.rows, s.h)-y_t;
 			for (size_t y=0; y<h; y++){
