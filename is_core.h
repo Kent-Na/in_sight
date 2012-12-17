@@ -30,11 +30,17 @@ namespace is{
 	class Window{
 		void setup_GL_option();
 		void setup_matrix(Size s);
+		Layouter *layouter; 
 		public:
 		Core *core;
+		Window();
+		//load all data from core and put those to window
+		void reload();
 		void update(Size s);
 		void mouse(Size s, Point p);
 		void mouse_move(Size s, Point p);
+		void wheel_move(Size s, Point p, uint32_t dx, uint32_t dy);
+		void key_down(Size s, uint8_t key);
 	};
 }
 

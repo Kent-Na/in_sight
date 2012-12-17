@@ -4,15 +4,28 @@ namespace is{
 
 	class Data_1d:public Data{
 		std::vector<double> data;
+		double _min_value;
+		double _max_value;
 		std::string _scale_name;
 
 		public:
 
 		View* default_view();
 
+		Data_1d(Core *c, std::vector<double> d){
+			data.insert(data.begin(), d.begin(), d.end());
+			init_cache();
+			c->add_data(this);
+		}
 		Data_1d(Core *c, double* d, size_t len){
 			data.insert(data.begin(), d, d+len);
+			init_cache();
 			c->add_data(this);
+		}
+
+		void init_cache(){
+			_min_value = *std::min_element(data.begin(), data.end());
+			_max_value = *std::max_element(data.begin(), data.end());
 		}
 
 		Data_1d* scale_name(std::string value){
@@ -28,10 +41,10 @@ namespace is{
 			return data.size();
 		}
 		double min_value() const{
-			return *std::min_element(data.begin(), data.end());
+			return _min_value;
 		}
 		double max_value() const{
-			return *std::max_element(data.begin(), data.end());
+			return _max_value;
 		}
 		double operator [] (size_t idx) const{
 			return data[idx];
@@ -102,7 +115,8 @@ namespace is{
 			if (grid_interval == 0)
 				return;
 
-			const size_t grid_start = idx_start%grid_interval;
+			const size_t grid_start = 
+				grid_interval-idx_start%grid_interval;
 
 			color::grid();
 
@@ -124,37 +138,71 @@ namespace is{
 		void update_header(Core *c, Size s) const{
 			const Data_1d* data = (Data_1d*)this->data;
 
-			const size_t header_size = 14;
+			//const size_t header_size = 14;
 			std::stringstream s_s;
 
 			std::string s_name = data->scale_name();
 			size_t forcused_idx = c->get_scale(s_name);
 
-			s_s << s_name << "[" << forcused_idx << "] = ";
-			if (forcused_idx >= idx_start && forcused_idx < idx_end(s)){
+			s_s << data->name() << "[" << s_name << ":"
+				<< forcused_idx << "] = ";
+			if (forcused_idx >= 0 && forcused_idx < data->size()){
 				const double value = (*data)[forcused_idx];
 				s_s << value;
 			}
+			
+			s_s << " [" << idx_start << ":" << idx_end(s) << "]";
 
 			std::string str = s_s.str();
 			Text_texture tex_gen;
-			Size tex_s = {128,14};
+			size_t tex_w = tex_gen.width(14, str.c_str())/4*4+4;
+			Size tex_s = {tex_w,14};
 			GLuint tex = tex_gen.generate(tex_s, str.c_str());
 			color::text();
 			draw_texture(tex, 0, 0, tex_s.w, tex_s.h);
 			glDeleteTextures(1, &tex);
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			update_seek_bar(c,s);
+		}
+		void update_seek_bar(Core *c, Size s) const{
+			const Data_1d* data = (Data_1d*)this->data;
+
+			Size ss = {50,12};
+			Size vs = {s.w/(double)data->size()*ss.w,ss.h};
+			Point sp = {s.w - ss.w, 1};
+			Point vp = {sp.x + idx_start/(double)data->size()*ss.w, sp.y};
+			color::grid();
+			draw_rect(sp.x, sp.y, ss.w, ss.h);
+			color::hilight();
+			draw_rect(vp.x, vp.y, vs.w, vs.h);
 		}
 
-		void mouse_move(Core *c,Size s, Point p) const{
+		void mouse_move(Core *c,Size s, Point p){
 			const Data_1d* data = (Data_1d*)this->data;
 			std::string s_name = data->scale_name();
 			c->set_scale(s_name, idx_start+p.x);
+		}
+		void wheel_move(Core *c, Size s, Point p,
+						int32_t dx, int32_t dy){
+			if ((int32_t)idx_start < -dy)
+				idx_start = 0;
+			else
+				idx_start += dy;
+
+			const Data_1d* data = (Data_1d*)this->data;
+			if (idx_start+s.w > data->size())
+				idx_start = data->size()-s.w;
 		}
 	};
 
 	class View_1d_bar_graph:public View_1d_graph_base{
 		public:
+
+		static Class_object<View, View_1d_bar_graph> klass;
+
 		void update_data(Core *c,Size s) const{
+			glTranslated(0.5,0,0);
 			const size_t idx_end = this->idx_end(s);
 			const Data_1d* data = (Data_1d*)this->data;
 
@@ -168,8 +216,8 @@ namespace is{
 			for (size_t i = 0; i<visible_count(s); i++){
 				const double value = (*data)[i+idx_start];
 				const double scaled = (value-min_value)*scale;
-				glVertex2d(i+1, 0.0);
-				glVertex2d(i+1, scaled);
+				glVertex2d(i, 0.0);
+				glVertex2d(i, scaled);
 			}
 			glEnd();
 		
@@ -189,6 +237,7 @@ namespace is{
 				glVertex2d(forcused_idx-idx_start, s.h);
 				glEnd();
 			}
+			glTranslated(-0.5,0,0);
 		}
 		
 		void update(Core *c,Size s) const{
@@ -205,7 +254,26 @@ namespace is{
 
 	};
 
+	class View_1d_label:public View_1d_graph_base{
+		public:
+
+		static Class_object<View, View_1d_label> klass;
+
+		size_t max_h(){
+			return 14;
+		}
+		size_t min_h(){
+			return 14;
+		}
+		void update(Core *c,Size s) const{
+			update_header(c, s);
+		}
+
+	};
+
 	inline View* Data_1d::default_view(){
+		if (view_class())
+			return view_class()->new_instance();
 		return new View_1d_bar_graph;
 	}
 
@@ -250,7 +318,7 @@ namespace is{
 		}
 
 		void update(Core *c, Size s) const{
-			const size_t header_size = 14;
+			//const size_t header_size = 14;
 			std::stringstream s_s;
 			s_s << "size = " << 100;
 			std::string str = s_s.str();

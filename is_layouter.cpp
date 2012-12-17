@@ -5,11 +5,36 @@
 
 namespace is{
 
+	Layouter::~Layouter(){
+		for (size_t i=0; i<views.size(); i++)
+			delete views[i];
+	}
 	void Layouter::add_view(View* view){
 		views.push_back(view);
 	}
+	void Layouter::detach_all_view(){
+		views.clear();
+	}
+
+	size_t Layouter::size() const{
+		return views.size();
+	}
+
+	View* Layouter::view(size_t index) const{
+		return views[index];
+	}
+
 	void Layouter::layout(Size s){
 		return; 
+	}
+	Frame* Layouter::frame_at(Point p){
+		for (auto itr = frames.begin(); itr != frames.end(); itr++){
+			Rect r(itr->x, itr->y, itr->w, itr->h);
+			if (r.in_side(p)){
+				return &*itr;
+			}
+		}
+		return NULL;
 	}
 	void Layouter::update(Core *c, Size s){
 		for (auto itr = frames.begin(); itr != frames.end(); itr++){
@@ -17,13 +42,15 @@ namespace is{
 		}
 	}
 	void Layouter::mouse_move(Core *c,Size s, Point p){
-		for (auto itr = frames.begin(); itr != frames.end(); itr++){
-			Rect r(itr->x, itr->y, itr->w, itr->h);
-			if (r.in_side(p)){
-				itr->mouse_move(c,p);
-				return;
-			}
-		}
+		Frame* f = frame_at(p);
+		if (f)
+			f->mouse_move(c,p);
+	}
+	void Layouter::wheel_move(Core *c, Size s, Point p, 
+							  int32_t dx, int32_t dy){
+		Frame* f = frame_at(p);
+		if (f)
+			f->wheel_move(c,p,dx,dy);
 	}
 
 	void Virtical_layouter::layout(Size s){

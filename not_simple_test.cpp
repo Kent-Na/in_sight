@@ -35,6 +35,12 @@ int main(int argc, char** argv)
 	}
 	(new is::Data_1d(c, data, 256-13))->name("try wave");
 
+	double l_data[2048];
+	for (int i = 0; i<2048; i++){
+		l_data[i] = sin(i/2.7)+cos(i/5.8)+sin(cos(i/35.2));
+	}
+	(new is::Data_1d(c, l_data, 2048))->name("looooong");
+
 	new is::GLUT::Window(c);
 
 	is::GLUT::run();

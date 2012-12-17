@@ -29,6 +29,7 @@ namespace GLUT{
 	void mouse(int Button, int State, int x, int y){
 		if (State != GLUT_UP)
 			return;
+
 		int window_id = glutGetWindow();
 		Window *window = window_map[window_id];
 
@@ -36,9 +37,19 @@ namespace GLUT{
 		s.w = glutGet(GLUT_WINDOW_WIDTH);
 		s.h = glutGet(GLUT_WINDOW_HEIGHT);
 
-		Point p = {x, s.h-y};
+		Point p = {(size_t)x, (size_t)s.h-y};
 
-		window->mouse(s, p);
+		const int amount_of_schroll = 20;
+		if (Button == 0)
+			window->mouse(s, p);
+		if (Button == 3)//up
+			window->wheel_move(s, p, 0, amount_of_schroll);
+		if (Button == 4)//down
+			window->wheel_move(s, p, 0, -amount_of_schroll);
+		if (Button == 5)//left
+			window->wheel_move(s, p, amount_of_schroll, 0);
+		if (Button == 6)//right
+			window->wheel_move(s, p, -amount_of_schroll, 0);
 		window->update(s);
 		glutSwapBuffers();
 	}
@@ -55,7 +66,7 @@ namespace GLUT{
 		s.w = glutGet(GLUT_WINDOW_WIDTH);
 		s.h = glutGet(GLUT_WINDOW_HEIGHT);
 
-		Point p = {x, s.h-y};
+		Point p = {(size_t)x, (size_t)s.h-y};
 
 		window->mouse_move(s, p);
 		window->update(s);
@@ -66,7 +77,13 @@ namespace GLUT{
 		int window_id = glutGetWindow();
 		Window *window = window_map[window_id];
 
-		exit(0);
+		Size s;
+		s.w = glutGet(GLUT_WINDOW_WIDTH);
+		s.h = glutGet(GLUT_WINDOW_HEIGHT);
+
+		window->key_down(s, Key);
+		window->update(s);
+		glutSwapBuffers();
 	}
 
 	void init(int argc, char** argv){
@@ -107,6 +124,11 @@ namespace is{
 		
 	}
 
+	Window::Window(){
+		core = NULL;
+		layouter = NULL;
+	}
+
 	void Window::setup_matrix(Size s){
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -124,6 +146,38 @@ namespace is{
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
+	void Window::reload(){
+		std::map<Data*, View*> old_views;
+		if (layouter){
+			for (size_t i= 0; i<layouter->size(); i++){
+				View* v = layouter->view(i);
+				old_views[v->data] = v;
+			}
+			layouter->detach_all_view();
+			delete layouter;
+		}
+
+		layouter = new Virtical_layouter_v1;
+
+		Data_list &data_list = core->get_data_list();
+
+		for (auto itr = data_list.begin(); 
+				itr != data_list.end(); itr++){
+			if (!(itr->flag&visible))
+				continue;
+			auto v_itr = old_views.find(itr->data);
+			if (v_itr == old_views.end()){
+				View* v = itr->data->default_view();
+				v->data = itr->data;
+				layouter->add_view(v);
+			}
+			else{
+				layouter->add_view(v_itr->second);
+				old_views.erase(v_itr);
+			}
+		}
+	}
+
 	void Window::update(Size s){
 
 		setup_matrix(s);
@@ -135,30 +189,18 @@ namespace is{
 
 		const size_t list_w = 84;
 		
-		Data_list &data_list = core->get_data_list();
-
-		Virtical_layouter_v1 layouter;
-		for (auto itr = data_list.begin(); 
-				itr != data_list.end(); itr++){
-			if (!(itr->flag&visible))
-				continue;
-			View* v = itr->data->default_view();
-			v->data = itr->data;
-			layouter.add_view(v);
-		}
-
-		{
-			View* v = new View_param_bar();
-			layouter.add_view(v);
-		}
+		//if (not layouter)
+		reload();
 
 		Size vs = {s.w-list_w, s.h};
-		layouter.layout(vs);
+		layouter->layout(vs);
 
 		glPushMatrix();
 		glTranslated(list_w, 0, 0);
-		layouter.update(core, vs);
+		layouter->update(core, vs);
 		glPopMatrix();
+
+		Data_list &data_list = core->get_data_list();
 
 		Data_list_view dl;
 		Size dls = {list_w, s.h};
@@ -180,27 +222,37 @@ namespace is{
 		const size_t list_w = 84;
 		Rect dlr(0,0,list_w, s.h);
 
-		Data_list &data_list = core->get_data_list();
-		Virtical_layouter_v1 layouter;
-		for (auto itr = data_list.begin(); 
-				itr != data_list.end(); itr++){
-			if (!(itr->flag&visible))
-				continue;
-			View* v = itr->data->default_view();
-			v->data = itr->data;
-			layouter.add_view(v);
+		Size vs = {s.w-list_w, s.h};
+		Point vp = {p.x-list_w, p.y};
+		layouter->layout(vs);
+		if (not dlr.in_side(p)){
+			layouter->mouse_move(core, vs, vp);
 		}
-
-		{
-			View* v = new View_param_bar();
-			layouter.add_view(v);
-		}
+	}
+	void Window::wheel_move(Size s, Point p, uint32_t dx, uint32_t dy){
+		const size_t list_w = 84;
+		Rect dlr(0,0,list_w, s.h);
 
 		Size vs = {s.w-list_w, s.h};
 		Point vp = {p.x-list_w, p.y};
-		layouter.layout(vs);
+		layouter->layout(vs);
 		if (not dlr.in_side(p)){
-			layouter.mouse_move(core, vs, vp);
+			layouter->wheel_move(core, vs, vp, dx, dy);
+		}
+	}
+	void Window::key_down(Size s, uint8_t key){
+		if (key == 'a'){
+			Data_list &data_list = core->get_data_list();
+			for (size_t i=0; i<data_list.size(); i++)
+				data_list[i].flag = true;
+		}
+		if (key == 'A'){
+			Data_list &data_list = core->get_data_list();
+			for (size_t i=0; i<data_list.size(); i++)
+				data_list[i].flag = false;
+		}
+		if (key == 27){
+			exit(0);
 		}
 	}
 

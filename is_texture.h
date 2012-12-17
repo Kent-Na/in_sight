@@ -10,6 +10,7 @@ namespace is{
 		public:
 		Text_texture();
 		~Text_texture();
+		size_t width(size_t h, const char* text);
 		GLuint generate(Size &s, const char* text);
 	};
 }

@@ -16,7 +16,6 @@ namespace is{
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, w, h, 0,
 				GL_ALPHA, GL_UNSIGNED_BYTE, img);
-
 		return tex;
 	}
 
@@ -52,6 +51,25 @@ namespace is{
 		FT_Done_FreeType(lib);
 	}
 
+	size_t Text_texture::width(size_t h,const char* text){
+		//init freetype
+		FT_Error error;
+
+		error = FT_Set_Pixel_Sizes(face, 0, h*0.9);
+
+		const char* itr = text;
+		size_t x_0 = 0;
+		size_t y_0 = h*0.8;
+		while (*itr){
+			FT_UInt glyph_idx = FT_Get_Char_Index(face, *itr);
+			error = FT_Load_Glyph(face, glyph_idx, FT_LOAD_DEFAULT);
+		
+			x_0 += face->glyph->advance.x/64;
+			y_0 += face->glyph->advance.y/64;
+			itr++;
+		}
+		return x_0;
+	}
 	GLuint Text_texture::generate(Size &s, const char* text){
 		//init freetype
 		FT_Error error;
