@@ -9,135 +9,110 @@ int main(int argc, char** argv)
 
 	auto c = new is::Core;
 
-	size_t w = 1280;
-	size_t h = 720;
-	uint8_t img[w*h];
-
-	auto f = fopen("/home/czel/sample_raw_b.raw","r");
-	for (int i=0; i<20; i++)
-		fread(img, w*h, 1, f);
-	fclose(f);
-
-
-	is::Image_info info;
-	info.w = w;
-	info.h = h;
-	info.bytes_per_pixel = 1;
-	info.bytes_per_row = w;
-	(new is::Data_2d(c, img, &info))
-		->scale_name_x("x")
-		->scale_name_y("y")
-		->name("frame-1");
-
-	info.w = 512;
-	info.h = 512;
-	info.bytes_per_pixel = 1;
-	info.bytes_per_row = w;
-	(new is::Data_2d(c, img, &info))
-		->scale_name_x("x")
-		->scale_name_y("y")
-		->name("cell");
-
-	is::Size cell_size(512, 512);
-	uint8_t cell[cell_size.w*cell_size.h];
-	capture_image(img, &info, cell, cell_size);
-	BnComplex c_cell[cell_size.w*cell_size.h];
-	for (size_t i= 0; i<cell_size.w*cell_size.h; i++){
-		c_cell[i] = cell[i];
-	}
-	BnComplex2DFFT<BnComplexFFT2n<9>> fft;
-	fft.execute(c_cell, 512);
-	for (size_t i= 0; i<cell_size.w*cell_size.h; i++){
-		double v = sqrt((c_cell[i]*c_cell[i].conjugate()).re)/20.0;
-		if (v>255)
-			cell[i] = 255;
-		else
-			cell[i] = v;
-	}
-
-	info.w = 512;
-	info.h = 512;
-	info.bytes_per_pixel = 1;
-	info.bytes_per_row = 512;
-	(new is::Data_2d(c, cell, &info))
-		->scale_name_x("x")
-		->scale_name_y("y")
-		->name("fft");
+	std::vector<double> acc_t;
+	std::vector<double> acc_x;
+	std::vector<double> acc_y;
+	std::vector<double> acc_z;
 
 	{
-		auto f = fopen("/home/czel/3a.log","r");
-		std::vector<double> fvx;
-		std::vector<double> fvy;
-		std::vector<double> fvz;
-		std::vector<double> fvt;
+		auto f = fopen("/home/czel/4a.log","r");
 		std::vector<double> fvm;
 		while (not feof(f)){
 			float val[4];
 			fread(&val, sizeof (float), 4, f);
-			fvx.push_back(val[0]);
-			fvy.push_back(val[1]);
-			fvz.push_back(val[2]);
-			fvt.push_back(val[3]);
-			fvm.push_back(sqrt(val[1]*val[1]+val[2]*val[2]+val[0]*val[0]));
+			acc_x.push_back(val[0]);
+			acc_y.push_back(val[1]);
+			acc_z.push_back(val[2]+0.027);
+			acc_t.push_back(val[3]);
 		}
-
-		(new is::Data_1d(c, &fvx.front(), fvx.size()))
-			->scale_name("ta")
-			->name("acc_x");
-		(new is::Data_1d(c, &fvy.front(), fvy.size()))
-			->scale_name("ta")
-			->name("acc_y");
-		(new is::Data_1d(c, &fvz.front(), fvz.size()))
-			->scale_name("ta")
-			->name("acc_z");
-		(new is::Data_1d(c, &fvt.front(), fvt.size()))
-			->scale_name("ta")
-			->name("acc_t")
-			->view_class(&is::View_1d_label::klass);
-		(new is::Data_1d(c, &fvm.front(), fvm.size()))
-			->scale_name("ta")
-			->name("acc_mag");
+		fclose(f);
 	}
 
+	std::vector<double> rot_x;
+	std::vector<double> rot_y;
+	std::vector<double> rot_z;
+	std::vector<double> rot_t;
 	{
-		auto f = fopen("/home/czel/3j.log","r");
-		std::vector<double> fvx;
-		std::vector<double> fvy;
-		std::vector<double> fvz;
-		std::vector<double> fsx;
-		std::vector<double> fvt;
-
+		auto f = fopen("/home/czel/4j.log","r");
 		double sigmax=0;
 		while (not feof(f)){
 			float val[4];
 			fread(&val, sizeof (float), 4, f);
-			sigmax += val[0];
-			//if (s++ % 10)
-			//	continue;
-			fvx.push_back(val[0]);
-			fsx.push_back(sigmax);
-			fvy.push_back(val[1]);
-			fvz.push_back(val[2]);
-			fvt.push_back(val[3]);
+			rot_x.push_back(val[0]);
+			rot_y.push_back(val[1]);
+			rot_z.push_back(val[2]);
+			rot_t.push_back(val[3]);
+		}
+		fclose(f);
+	}
+
+	///
+	//process acc
+	double acc_dt = 0;
+	{
+
+		acc_dt = (acc_t[500]-acc_t[0])/500.0;
+
+		(new is::Data_1d(c, acc_x))
+			->scale_name("ta")
+			->name("acc_x");
+		(new is::Data_1d(c, acc_y))
+			->scale_name("ta")
+			->name("acc_y");
+		(new is::Data_1d(c, acc_z))
+			->scale_name("ta")
+			->name("acc_z");
+		(new is::Data_1d(c, acc_t))
+			->scale_name("ta")
+			->name("acc_t")
+			->view_class(&is::View_1d_label::klass);
+	}
+
+	///
+	//process rot
+	{
+
+		size_t stable_sample_count = 600;
+		double time = rot_t[stable_sample_count]-rot_t[0];
+		double k2 = (time/stable_sample_count);
+
+		double rot_x_0 = 0.0;
+		double rot_y_0 = 0.0;
+		double rot_z_0 = 0.0;
+
+		for (size_t i= 0; i<stable_sample_count; i++){
+			rot_x_0 += rot_x[i];
+			rot_y_0 += rot_y[i];
+			rot_z_0 += rot_z[i];
+		}
+		rot_x_0 /= stable_sample_count;
+		rot_y_0 /= stable_sample_count;
+		rot_z_0 /= stable_sample_count;
+
+		for (size_t i = 0; i<rot_t.size(); i++){
+			rot_x[i] -= rot_x_0;
+			rot_y[i] -= rot_y_0;
+			rot_z[i] -= rot_z_0;
 		}
 
-		size_t stable_sample_count = 100;
-		double offset = fsx[stable_sample_count];
-		double time = fvt[stable_sample_count]-fvt[0];
-		double k1 = offset/time;
-		double k2 = (time/stable_sample_count);
-		for (size_t i= 0; i<fsx.size(); i++){
-			fsx[i] -= k1 * (fvt[i]-fvt[0]);
-			fsx[i] *= k2;
-			fsx[i] = sin(fsx[i]);
+		DcQuaternion r_fix = 
+			DcRotateionQuaternion(0.5*atan(0.025),
+								  DcVector(0,1,0));
+
+		for (size_t i = 0; i<rot_t.size(); i++){
+			DcVector v = r_fix.rotate(DcVector(rot_x[i],rot_y[i],rot_z[i]));
+			rot_x[i] = v.x;
+			rot_y[i] = v.y;
+			rot_z[i] = v.z;
 		}
 
 		DcQuaternion q(1,0,0,0);
 		std::vector<double> gx;
 		std::vector<double> gy;
 		std::vector<double> gz;
-		for (size_t i= 0; i<fsx.size(); i++){
-			DcVector rot_v(fvx[i], fvy[i], fvz[i]);
+		std::vector<double> g_mag;
+		for (size_t i= 0; i<rot_t.size(); i++){
+			DcVector rot_v(rot_x[i], rot_y[i], rot_z[i]);
 			double dt = k2;
 			double theta = -0.5*rot_v.magnitude()*dt;
 			DcQuaternion rotq = DcRotateionQuaternion(theta,rot_v);
@@ -147,34 +122,142 @@ int main(int argc, char** argv)
 			gx.push_back(g.x);
 			gy.push_back(g.y);
 			gz.push_back(g.z);
+			g_mag.push_back(DcVector(g.x,g.y,g.z).magnitude());
 		}
 
-		(new is::Data_1d(c, &fvx.front(), fvx.size()))
+		std::vector<double> gxd;
+		std::vector<double> gyd;
+		std::vector<double> gzd;
+
+		std::vector<double> r_acc_x;
+		std::vector<double> r_acc_y;
+		std::vector<double> r_acc_z;
+
+		size_t j = 0;
+		for (size_t i = 0; i<acc_t.size(); i++){
+			double t = acc_t[i];
+			for (NULL; j <rot_t.size(); j++){
+				if (rot_t[j]>t){
+					gxd.push_back(gx[j]);
+					gyd.push_back(gy[j]);
+					gzd.push_back(gz[j]);
+					r_acc_x.push_back(acc_x[i]-gx[j]);
+					r_acc_y.push_back(acc_y[i]-gy[j]);
+					r_acc_z.push_back(acc_z[i]-gz[j]);
+					break;
+				}
+			}
+		}
+
+		{
+			double cost = DcVector(
+				r_acc_x.back(),
+				r_acc_y.back(),
+				r_acc_z.back()).magnitude();
+			printf("cost = %f\n", cost);
+
+		}
+
+
+		//velocity
+		double vx = 0;
+		double vy = 0;
+		double vz = 0;
+
+		std::vector<double> vel_x;
+		std::vector<double> vel_y;
+		std::vector<double> vel_z;
+
+		//position
+		double px = 0;
+		double py = 0;
+		double pz = 0;
+
+		std::vector<double> pos_x;
+		std::vector<double> pos_y;
+		std::vector<double> pos_z;
+		for (size_t i = 0; i<acc_t.size(); i++){
+			px += 0.5*r_acc_x[i]*acc_dt*acc_dt+vx*acc_dt;
+			py += 0.5*r_acc_y[i]*acc_dt*acc_dt+vy*acc_dt;
+			pz += 0.5*r_acc_z[i]*acc_dt*acc_dt+vz*acc_dt;
+			vx += r_acc_x[i]*acc_dt;
+			vy += r_acc_y[i]*acc_dt;
+			vz += r_acc_z[i]*acc_dt;
+			pos_x.push_back(px);
+			pos_y.push_back(py);
+			pos_z.push_back(pz);
+			vel_x.push_back(vx);
+			vel_y.push_back(vy);
+			vel_z.push_back(vz);
+		}
+
+		(new is::Data_1d(c, rot_x))
 			->scale_name("tr")
 			->name("rot_x");
-		(new is::Data_1d(c, &fsx.front(), fsx.size()))
-			->scale_name("tr")
-			->name("ang_x");
-		(new is::Data_1d(c, &fvy.front(), fvy.size()))
+		(new is::Data_1d(c, rot_y))
 			->scale_name("tr")
 			->name("rot_y");
-		(new is::Data_1d(c, &fvz.front(), fvz.size()))
+		(new is::Data_1d(c, rot_z))
 			->scale_name("tr")
 			->name("rot_z");
-		(new is::Data_1d(c, &fvt.front(), fvt.size()))
+		(new is::Data_1d(c, rot_t))
 			->scale_name("tr")
 			->name("rot_t")
 			->view_class(&is::View_1d_label::klass);
 
-		(new is::Data_1d(c, &gx.front(), gx.size()))
+		(new is::Data_1d(c, gx))
 			->scale_name("tr")
 			->name("g_x");
-		(new is::Data_1d(c, &gy.front(), gy.size()))
+		(new is::Data_1d(c, gy))
 			->scale_name("tr")
 			->name("g_y");
-		(new is::Data_1d(c, &gz.front(), gz.size()))
+		(new is::Data_1d(c, gz))
 			->scale_name("tr")
 			->name("g_z");
+
+		(new is::Data_1d(c, g_mag))
+			->scale_name("tr")
+			->name("g_mag");
+
+		(new is::Data_1d(c, gxd))
+			->scale_name("ta")
+			->name("g_x_fix");
+		(new is::Data_1d(c, gyd))
+			->scale_name("ta")
+			->name("g_y_fix");
+		(new is::Data_1d(c, gzd))
+			->scale_name("ta")
+			->name("g_z_fix");
+
+		(new is::Data_1d(c, r_acc_x))
+			->scale_name("ta")
+			->name("acc_x_fix");
+		(new is::Data_1d(c, r_acc_y))
+			->scale_name("ta")
+			->name("acc_y_fix");
+		(new is::Data_1d(c, r_acc_z))
+			->scale_name("ta")
+			->name("acc_z_fix");
+
+		(new is::Data_1d(c, vel_x))
+			->scale_name("ta")
+			->name("_vel_x");
+		(new is::Data_1d(c, vel_y))
+			->scale_name("ta")
+			->name("_vel_y");
+		(new is::Data_1d(c, vel_z))
+			->scale_name("ta")
+			->name("_vel_z");
+
+		(new is::Data_1d(c, pos_x))
+			->scale_name("ta")
+			->name("pos_x");
+		(new is::Data_1d(c, pos_y))
+			->scale_name("ta")
+			->name("pos_y");
+		(new is::Data_1d(c, pos_z))
+			->scale_name("ta")
+			->name("pos_z");
 	}
 
 	new is::GLUT::Window(c);
