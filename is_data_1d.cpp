@@ -7,6 +7,15 @@
 #include "is_data_1d.h"
 
 namespace is{
-	Class_object<View, View_1d_bar_graph> View_1d_bar_graph::klass;
-	Class_object<View, View_1d_label> View_1d_label::klass;
+	template <typename T>
+	Class_object<View, View_1d_bar_graph<T>> 
+		View_1d_bar_graph<T>::klass;
+	template <typename T>
+	Class_object<View, View_1d_label<T>> 
+		View_1d_label<T>::klass;
+	
+	namespace klass_magic{
+		auto magic_0 = &View_1d_bar_graph<double>::klass;
+		auto magic_1 = &View_1d_label<double>::klass;
+	}
 }

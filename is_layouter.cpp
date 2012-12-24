@@ -52,6 +52,11 @@ namespace is{
 		if (f)
 			f->wheel_move(c,p,dx,dy);
 	}
+	void Layouter::event(Core *c, Event_code code){
+		for (auto itr = frames.begin(); itr != frames.end(); itr++){
+			itr->event(c,code);
+		}
+	}
 
 	void Virtical_layouter::layout(Size s){
 		double cell_h = s.h/(double)views.size();

@@ -1,4 +1,5 @@
 namespace is{
+	
 	class Core{
 		std::map<std::string,size_t> scale;
 		//std::vector<Data*> data_list;

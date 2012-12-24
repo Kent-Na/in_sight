@@ -24,6 +24,7 @@ namespace is{
 		void update(Core *c,Size s);
 		void mouse_move(Core *c, Size s, Point p);
 		void wheel_move(Core *c, Size s, Point p, int32_t dx, int32_t dy);
+		void event(Core *c, Event_code code);
 	};
 
 	class Virtical_layouter: public Layouter{

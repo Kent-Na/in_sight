@@ -1,23 +1,22 @@
 namespace is{
-	class Data;
-	class View_1d_bar_graph;
-
+	
+	template <typename T = double>
 	class Data_1d:public Data{
-		std::vector<double> data;
-		double _min_value;
-		double _max_value;
+		std::vector<T> data;
+		T _min_value;
+		T _max_value;
 		std::string _scale_name;
 
 		public:
 
 		View* default_view();
 
-		Data_1d(Core *c, std::vector<double> d){
+		Data_1d(Core *c, std::vector<T> d){
 			data.insert(data.begin(), d.begin(), d.end());
 			init_cache();
 			c->add_data(this);
 		}
-		Data_1d(Core *c, double* d, size_t len){
+		Data_1d(Core *c, T* d, size_t len){
 			data.insert(data.begin(), d, d+len);
 			init_cache();
 			c->add_data(this);
@@ -51,7 +50,7 @@ namespace is{
 		}
 
 		//Be careful. It will make system broken.
-		std::vector<double>& raw_data(){
+		std::vector<T>& raw_data(){
 			return data;
 		}
 	};
@@ -85,6 +84,7 @@ namespace is{
 		}
 	}
 
+	template <typename T = double>
 	class View_1d_graph_base:public View{
 
 		public:
@@ -102,12 +102,12 @@ namespace is{
 		}
 
 		size_t idx_end(Size s) const{
-			const Data_1d* data = (Data_1d*)this->data;
+			const Data_1d<T>* data = (Data_1d<T>*)this->data;
 			return std::min(idx_start+s.w, data->size());
 		}
 
 		size_t visible_count(Size s) const{
-			const Data_1d* data = (Data_1d*)this->data;
+			const Data_1d<T>* data = (Data_1d<T>*)this->data;
 			return std::min(s.w, data->size() - idx_start);
 		}
 
@@ -136,7 +136,7 @@ namespace is{
 		}
 
 		void update_header(Core *c, Size s) const{
-			const Data_1d* data = (Data_1d*)this->data;
+			const Data_1d<T>* data = (Data_1d<T>*)this->data;
 
 			//const size_t header_size = 14;
 			std::stringstream s_s;
@@ -166,7 +166,7 @@ namespace is{
 			update_seek_bar(c,s);
 		}
 		void update_seek_bar(Core *c, Size s) const{
-			const Data_1d* data = (Data_1d*)this->data;
+			const Data_1d<T>* data = (Data_1d<T>*)this->data;
 
 			Size ss = {50,12};
 			Size vs = {s.w/(double)data->size()*ss.w,ss.h};
@@ -179,32 +179,44 @@ namespace is{
 		}
 
 		void mouse_move(Core *c,Size s, Point p){
-			const Data_1d* data = (Data_1d*)this->data;
+			const Data_1d<T>* data = (Data_1d<T>*)this->data;
 			std::string s_name = data->scale_name();
 			c->set_scale(s_name, idx_start+p.x);
 		}
-		void wheel_move(Core *c, Size s, Point p,
-						int32_t dx, int32_t dy){
-			if ((int32_t)idx_start < -dy)
+		void scroll(Size s, int32_t delta){
+			if ((int32_t)idx_start < -delta)
 				idx_start = 0;
 			else
-				idx_start += dy;
+				idx_start += delta;
 
-			const Data_1d* data = (Data_1d*)this->data;
+			const Data_1d<T>* data = (Data_1d<T>*)this->data;
 			if (idx_start+s.w > data->size())
 				idx_start = data->size()-s.w;
 		}
+		void wheel_move(Core *c, Size s, Point p,
+						int32_t dx, int32_t dy){
+			scroll(s, -dy);
+		}
+		void event(Core *c, Size s, Event_code code){
+			if (code == scroll_x_plus){
+				scroll(s, 100);
+			}
+			if (code == scroll_x_minus){
+				scroll(s, -100);
+			}
+		}
 	};
 
-	class View_1d_bar_graph:public View_1d_graph_base{
+	template<typename T = double>
+	class View_1d_bar_graph:public View_1d_graph_base<T>{
 		public:
 
-		static Class_object<View, View_1d_bar_graph> klass;
+		static Class_object<View, View_1d_bar_graph<T>> klass;
 
 		void update_data(Core *c,Size s) const{
 			glTranslated(0.5,0,0);
 			const size_t idx_end = this->idx_end(s);
-			const Data_1d* data = (Data_1d*)this->data;
+			const Data_1d<T>* data = (Data_1d<T>*)this->data;
 
 			const double max_value = data->max_value();
 			const double min_value = data->min_value();
@@ -213,8 +225,8 @@ namespace is{
 			color::value();
 
 			glBegin(GL_LINES);
-			for (size_t i = 0; i<visible_count(s); i++){
-				const double value = (*data)[i+idx_start];
+			for (size_t i = 0; i<this->visible_count(s); i++){
+				const double value = (*data)[i+this->idx_start];
 				const double scaled = (value-min_value)*scale;
 				glVertex2d(i, 0.0);
 				glVertex2d(i, scaled);
@@ -223,9 +235,11 @@ namespace is{
 		
 			std::string s_name = data->scale_name();
 			size_t forcused_idx = c->get_scale(s_name);
-			if (forcused_idx >= idx_start && forcused_idx < idx_end){
+			if (forcused_idx >= this->idx_start && 
+				forcused_idx <  idx_end){
 				const double value = (*data)[forcused_idx];
 				const double scaled = (value-min_value)*scale;
+				const double idx_start = this->idx_start;
 
 				glBegin(GL_LINES);
 				color::hilight();
@@ -242,22 +256,23 @@ namespace is{
 		
 		void update(Core *c,Size s) const{
 			Size vs(s.w, s.h-14);
-			update_grid(vs);
-			update_invalid(vs);
+			this->update_grid(vs);
+			this->update_invalid(vs);
 			update_data(c,Size(s.w,s.h-14));
 
 			glPushMatrix();
 			glTranslated(0,s.h-14,0);
-			update_header(c, s);
+			this->update_header(c, s);
 			glPopMatrix();
 		}
 
 	};
 
-	class View_1d_label:public View_1d_graph_base{
+	template<typename T = double>
+	class View_1d_label:public View_1d_graph_base<T>{
 		public:
 
-		static Class_object<View, View_1d_label> klass;
+		static Class_object<View, View_1d_label<T>> klass;
 
 		size_t max_h(){
 			return 14;
@@ -266,73 +281,15 @@ namespace is{
 			return 14;
 		}
 		void update(Core *c,Size s) const{
-			update_header(c, s);
+			this->update_header(c, s);
 		}
 
 	};
 
-	inline View* Data_1d::default_view(){
+	template <typename T>
+	inline View* Data_1d<T>::default_view(){
 		if (view_class())
 			return view_class()->new_instance();
-		return new View_1d_bar_graph;
+		return new View_1d_bar_graph<T>;
 	}
-
-	class Filter_1d_MA_LPF:public Data{
-		Data_1d *input;
-		Data_1d *output;
-
-		size_t kernel_size;
-		public:
-
-		View* default_view();
-
-		void apply(){
-			std::vector<double> &input_data = input->raw_data();
-			std::vector<double> &output_data = output->raw_data();
-			output_data.clear();
-			output_data.insert(output_data.begin(), input_data.begin(), 
-					input_data.end());
-			filter_1d_MA_LPF(&output_data.front(), output_data.size(), 12);
-		}
-	};
-
-	class View_filter_1d_MA_LPF:public View{
-
-		void update(Core *c, Size s) const{
-			const size_t header_size = 14;
-
-			View_1d_bar_graph data_view;
-			Size data_view_size = {s.w, s.h-header_size};
-			data_view.update(c, data_view_size);
-		}
-	};
-
-	class View_param_bar:public View{
-
-		size_t min_h(){
-			return 14;
-		}
-
-		size_t max_h(){
-			return 14;
-		}
-
-		void update(Core *c, Size s) const{
-			//const size_t header_size = 14;
-			std::stringstream s_s;
-			s_s << "size = " << 100;
-			std::string str = s_s.str();
-			Text_texture tex_gen;
-			Size tex_s = {128,14};
-			GLuint tex = tex_gen.generate(tex_s, str.c_str());
-			color::text();
-			draw_texture(tex, 0, 0, tex_s.w, tex_s.h);
-			glDeleteTextures(1, &tex);
-		}
-	};
-
-	inline View* Filter_1d_MA_LPF::default_view(){
-		return new View_filter_1d_MA_LPF;
-	}
-
 }

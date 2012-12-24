@@ -56,6 +56,18 @@ namespace is{
 		}
 	};
 
+	enum Event_code{
+		scroll_x_plus,
+		scroll_x_minus,
+		scroll_y_plus,
+		scroll_y_minus,
+
+		scroll_x_plus_page,
+		scroll_x_minus_page,
+		scroll_y_plus_page,
+		scroll_y_minus_page,
+	};
+
 	//S is root class.
 	template <typename S, typename T = S>
 	class Class_object : public Class_object <S,S>{
@@ -85,6 +97,7 @@ namespace is{
 		virtual void mouse_move(Core *c, Size s, Point p) { return; }
 		virtual void wheel_move(Core *c, Size s, Point p,
 								int32_t dx, int32_t dy) { return; }
+		virtual void event(Core *c, Size s, Event_code code) { return; }
 	};
 
 	struct Frame{
@@ -110,6 +123,10 @@ namespace is{
 			Size s = {w, h};
 			Point pv = {p.x-x, p.y-y};
 			view->wheel_move(c,s,pv,dx,dy);
+		}
+		void event(Core *c, Event_code code){
+			Size s = {w, h};
+			view->event(c, s, code);
 		}
 	};
 

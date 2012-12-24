@@ -251,6 +251,12 @@ namespace is{
 			for (size_t i=0; i<data_list.size(); i++)
 				data_list[i].flag = false;
 		}
+		if (key == 'n'){
+			layouter->event(core, scroll_x_plus);
+		}
+		if (key == 'h'){
+			layouter->event(core, scroll_x_minus);
+		}
 		if (key == 27){
 			exit(0);
 		}
