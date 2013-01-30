@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 	std::vector<double> acc_z;
 
 	{
-		auto f = fopen("/home/czel/4a.log","r");
+		auto f = fopen("/home/czel/1a.log","r");
 		std::vector<double> fvm;
 		while (not feof(f)){
 			float val[4];
@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 	std::vector<double> rot_z;
 	std::vector<double> rot_t;
 	{
-		auto f = fopen("/home/czel/4j.log","r");
+		auto f = fopen("/home/czel/1j.log","r");
 		double sigmax=0;
 		while (not feof(f)){
 			float val[4];
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 	//process rot
 	{
 
-		size_t stable_sample_count = 600;
+		size_t stable_sample_count = 50;
 		double time = rot_t[stable_sample_count]-rot_t[0];
 		double k2 = (time/stable_sample_count);
 
@@ -129,8 +129,8 @@ int main(int argc, char** argv)
 			rot_z[i] -= rot_z_0;
 		}
 
-/*
-		DcQuaternion r_fix = 
+		/*
+		   DcQuaternion r_fix = 
 			DcRotateionQuaternion(0.5*atan(0.023),
 								  DcVector(0,1,0));
 
@@ -187,7 +187,7 @@ int main(int argc, char** argv)
 			else
 				dt = rot_t[i-1]-rot_t[i];
 
-			double theta = -0.5*rot_v.magnitude()*dt;
+			double theta = 0.5*rot_v.magnitude()*dt;
 			DcQuaternion rotq = DcRotateionQuaternion(theta,rot_v);
 			q = q*rotq;
 			DcVector g(0,0,-1);
@@ -201,7 +201,7 @@ int main(int argc, char** argv)
 
 		for (size_t i= 0; i<rot_t.size(); i++){
 			DcVector rot_v(rot_x[i], rot_y[i], rot_z[i]);
-			double theta = -0.5*rot_v.magnitude()*acc_dt;
+			double theta = 0.5*rot_v.magnitude()*acc_dt;
 			DcQuaternion rotq = DcRotateionQuaternion(theta,rot_v);
 
 			DcVector e0(1,0,0);
@@ -257,37 +257,6 @@ int main(int argc, char** argv)
 		}
 
 
-		//velocity
-		double vx = 0;
-		double vy = 0;
-		double vz = 0;
-
-		std::vector<double> vel_x;
-		std::vector<double> vel_y;
-		std::vector<double> vel_z;
-
-		//position
-		double px = 0;
-		double py = 0;
-		double pz = 0;
-
-		std::vector<double> pos_x;
-		std::vector<double> pos_y;
-		std::vector<double> pos_z;
-		for (size_t i = 0; i<acc_t.size(); i++){
-			px += 0.5*r_acc_x[i]*acc_dt*acc_dt+vx*acc_dt;
-			py += 0.5*r_acc_y[i]*acc_dt*acc_dt+vy*acc_dt;
-			pz += 0.5*r_acc_z[i]*acc_dt*acc_dt+vz*acc_dt;
-			vx += r_acc_x[i]*acc_dt;
-			vy += r_acc_y[i]*acc_dt;
-			vz += r_acc_z[i]*acc_dt;
-			pos_x.push_back(px);
-			pos_y.push_back(py);
-			pos_z.push_back(pz);
-			vel_x.push_back(vx);
-			vel_y.push_back(vy);
-			vel_z.push_back(vz);
-		}
 
 		(new is::Data_1d<double>(c, rot_x))
 			->scale_name("tr")
@@ -347,25 +316,66 @@ int main(int argc, char** argv)
 			->scale_name("ta")
 			->name("acc_z_fix");
 
-		(new is::Data_1d<double>(c, vel_x))
-			->scale_name("ta")
-			->name("_vel_x");
-		(new is::Data_1d<double>(c, vel_y))
-			->scale_name("ta")
-			->name("_vel_y");
-		(new is::Data_1d<double>(c, vel_z))
-			->scale_name("ta")
-			->name("_vel_z");
 
-		(new is::Data_1d<double>(c, pos_x))
-			->scale_name("ta")
-			->name("pos_x");
-		(new is::Data_1d<double>(c, pos_y))
-			->scale_name("ta")
-			->name("pos_y");
-		(new is::Data_1d<double>(c, pos_z))
-			->scale_name("ta")
-			->name("pos_z");
+		auto gen_vp = [&](
+			const std::vector<double> &acc_x,
+			const std::vector<double> &acc_y,
+			const std::vector<double> &acc_z){
+			//velocity
+			double vx = 0;
+			double vy = 0;
+			double vz = 0;
+
+			std::vector<double> vel_x;
+			std::vector<double> vel_y;
+			std::vector<double> vel_z;
+
+			//position
+			double px = 0;
+			double py = 0;
+			double pz = 0;
+
+			std::vector<double> pos_x;
+			std::vector<double> pos_y;
+			std::vector<double> pos_z;
+			for (size_t i = 0; i<acc_t.size(); i++){
+				px += 0.5*acc_x[i]*acc_dt*acc_dt+vx*acc_dt;
+				py += 0.5*acc_y[i]*acc_dt*acc_dt+vy*acc_dt;
+				pz += 0.5*acc_z[i]*acc_dt*acc_dt+vz*acc_dt;
+				vx += acc_x[i]*acc_dt;
+				vy += acc_y[i]*acc_dt;
+				vz += acc_z[i]*acc_dt;
+				pos_x.push_back(px);
+				pos_y.push_back(py);
+				pos_z.push_back(pz);
+				vel_x.push_back(vx);
+				vel_y.push_back(vy);
+				vel_z.push_back(vz);
+			}
+
+			(new is::Data_1d<double>(c, vel_x))
+				->scale_name("ta")
+				->name("_vel_x");
+			(new is::Data_1d<double>(c, vel_y))
+				->scale_name("ta")
+				->name("_vel_y");
+			(new is::Data_1d<double>(c, vel_z))
+				->scale_name("ta")
+				->name("_vel_z");
+
+			(new is::Data_1d<double>(c, pos_x))
+				->scale_name("ta")
+				->name("pos_x");
+			(new is::Data_1d<double>(c, pos_y))
+				->scale_name("ta")
+				->name("pos_y");
+			(new is::Data_1d<double>(c, pos_z))
+				->scale_name("ta")
+				->name("pos_z");
+		};
+
+		gen_vp(acc_x_lpf, acc_y_lpf, acc_z_lpf);
+		gen_vp(r_acc_x, r_acc_y, r_acc_z);
 	}
 
 	new is::GLUT::Window(c);

@@ -184,6 +184,7 @@ namespace is{
 	struct Image_info{
 		size_t w;//width
 		size_t h;//height
+		size_t channel;//1 for grayscale, 3 for RGB...
 		size_t bytes_per_row;
 		size_t bytes_per_pixel;
 	};

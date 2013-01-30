@@ -81,6 +81,18 @@ namespace is{
 			if (not data->tex)
 				data->rebuild_texture();
 			draw_texture(data->tex, 0, 0, vs.w, vs.h);
+
+			std::string s_name_x = data->scale_name_x();
+			std::string s_name_y = data->scale_name_y();
+			size_t forcused_idx_x = c->get_scale(s_name_x);
+			size_t forcused_idx_y = c->get_scale(s_name_y);
+
+			glBegin(GL_LINES);
+			glVertex2d(forcused_idx_x,0);
+			glVertex2d(forcused_idx_x,vs.h);
+			glVertex2d(0,forcused_idx_y);
+			glVertex2d(vs.w,forcused_idx_y);
+			glEnd();
 			update_header(c, s);
 			//draw_texture(0, 0, 0, 100, 100);
 		}
