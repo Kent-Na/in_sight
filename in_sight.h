@@ -10,6 +10,8 @@
 #include "is_data_1d.h"
 #include "is_data_2d.h"
 
+#include "is_filter.h"
+
 
 #ifdef IS_USE_GLUT
 #include "is_glut.h"
