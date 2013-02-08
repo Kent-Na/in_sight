@@ -11,8 +11,8 @@ env = Environment(
 )
 
 #env.Append(CCFLAGS = ['-O3'])
-#env.Replace(CC = 'clang')
-#env.Replace(CXX = 'clang')
+env.Replace(CC = 'clang')
+env.Replace(CXX = 'clang++')
 #env.Replace(CC = 'gcc-4.6')
 #env.Replace(CXX = 'g++-4.6')
 env.Append(CCFLAGS = ['-Wall','-g'])
@@ -21,9 +21,11 @@ env.Append(CFLAGS = ['-Wno-pointer-sign','-Wno-deprecated-declarations',
 					 '-Wno-narrowing','-Wno-unused'])
 env.Append(CCFLAGS = ['-Wno-narrowing','-Wno-unused'])
 env.Append(CXXFLAGS = ['-xc++','-std=gnu++0x'])
-env.Append(LIBS = ['m','GL','glut','freetype'])
+env.Append(LIBS = ['m','freetype'])
+#env.Append(LIBS = ['GL','glut'])
 env.Append(LIBPATH = ['/usr/local/pgsql/lib'])
 env.Append(CPPPATH = ['/usr/local/pgsql/include', '/usr/include/freetype2'])
+env.Append(FRAMEWORKS = ['openGL','GLUT'])
 
 Export('env')
 

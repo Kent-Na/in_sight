@@ -6,6 +6,7 @@ namespace is{
 		T _min_value;
 		T _max_value;
 		std::string _scale_name;
+		size_t _grid_interval;
 
 		public:
 
@@ -15,11 +16,13 @@ namespace is{
 			data.insert(data.begin(), d.begin(), d.end());
 			init_cache();
 			c->add_data(this);
+            _grid_interval = 0;
 		}
 		Data_1d(Core *c, T* d, size_t len){
 			data.insert(data.begin(), d, d+len);
 			init_cache();
 			c->add_data(this);
+            _grid_interval = 0;
 		}
 
 		void init_cache(){
@@ -34,6 +37,14 @@ namespace is{
 
 		std::string scale_name() const{
 			return _scale_name;
+		}
+
+		Data_1d* grid_interval(size_t value){
+			_grid_interval = value;
+			return this;
+		}
+		size_t grid_interval() const{
+			return _grid_interval;
 		}
 
 		size_t size() const{
@@ -88,12 +99,9 @@ namespace is{
 	class View_1d_graph_base:public View{
 
 		public:
-
-		size_t grid_interval;	
 		size_t idx_start;
 
 		View_1d_graph_base(){
-			grid_interval = 30;
 			idx_start = 0;
 		}
 
@@ -112,6 +120,8 @@ namespace is{
 		}
 
 		void update_grid(Size s) const{
+            const Data_1d<T>* data = (Data_1d<T>*)this->data;
+            auto grid_interval = data->grid_interval();
 			if (grid_interval == 0)
 				return;
 
@@ -171,8 +181,9 @@ namespace is{
 			Size ss = {50,12};
 			Size vs = {s.w/(double)data->size()*ss.w,ss.h};
 			Point sp = {s.w - ss.w, 1};
-			Point vp = {sp.x + idx_start/(double)data->size()*ss.w, sp.y};
-			color::grid();
+			Point vp = {(size_t)(sp.x + idx_start/(double)data->size()*ss.w), sp.y};
+            if (vs.w==0) vs.w = 1;
+            color::grid();
 			draw_rect(sp.x, sp.y, ss.w, ss.h);
 			color::hilight();
 			draw_rect(vp.x, vp.y, vs.w, vs.h);
@@ -195,7 +206,7 @@ namespace is{
 		}
 		void wheel_move(Core *c, Size s, Point p,
 						int32_t dx, int32_t dy){
-			scroll(s, -dy);
+			scroll(s, -dx);
 		}
 		void event(Core *c, Size s, Event_code code){
 			if (code == scroll_x_plus){

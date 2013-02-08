@@ -1,6 +1,9 @@
-#include <ft2build.h>
-#include FT_FREETYPE_H
+//#include <ft2build.h>
+//#include FT_FREETYPE_H
 
+#include <CoreText/CoreText.h>
+#include <ApplicationServices/ApplicationServices.h>
+#include "is_config.h"
 #include "is_pch.h"
 #include "is_header_all.h"
 #include "is_texture.h"
@@ -28,6 +31,7 @@ namespace is{
 		glTexCoord2f(1,1);	glVertex2f(x+w,y+0);
 		glEnd();
 	}
+#ifdef IS_USE_FREETYPE
 
 	Text_texture::Text_texture(){
 		FT_Error error;
@@ -110,4 +114,68 @@ namespace is{
 		free(out_bitmap);
 		return tex;
 	}
+#endif
+    
+#define IS_USE_COCOA
+#ifdef IS_USE_COCOA
+	Text_texture::Text_texture(){
+	}
+
+	Text_texture::~Text_texture(){
+	}
+
+	size_t Text_texture::width(size_t h,const char* text){
+			return 200;
+	}
+
+	GLuint Text_texture::generate(Size &s, const char* text){
+
+		CGColorSpaceRef color_space = CGColorSpaceCreateDeviceGray();
+		CGContextRef ctx = CGBitmapContextCreate(
+				NULL,
+				s.w, s.h, 8, s.w,
+				color_space, 0);
+
+		CGColorSpaceRelease(color_space);
+
+		uint8_t *out_bitmap = (uint8_t*)CGBitmapContextGetData(ctx);
+
+		CGContextSetTextPosition(ctx, 0, s.h*0.2);
+
+		CFMutableDictionaryRef attr = 
+			CFDictionaryCreateMutable(NULL, 1, NULL, NULL);
+		CTFontRef font = 
+			CTFontCreateUIFontForLanguage(
+					kCTFontUserFontType, s.h*0.9, NULL);
+		CFDictionaryAddValue(
+					attr, kCTFontAttributeName, font);
+        CGColorRef fcolor = CGColorCreateGenericGray(1.0, 1.0);
+		CFDictionaryAddValue(
+					attr, kCTForegroundColorAttributeName, fcolor);
+		CFStringRef str = 
+			CFStringCreateWithBytes(
+					NULL, (uint8_t*)text, strlen(text),
+					kCFStringEncodingUTF8, false);
+
+		CFAttributedStringRef fstr =
+			CFAttributedStringCreate(NULL, str, attr);
+		CTLineRef ln = CTLineCreateWithAttributedString(fstr);
+		CTLineDraw(ln, ctx);
+
+		CFRelease(fstr);
+        CGColorRelease(fcolor);
+		CFRelease(str);
+		CFRelease(font);
+		CFRelease(attr);
+
+
+		GLuint tex = texture_from_grayscale(out_bitmap, s.w, s.h);
+
+		CGContextRelease(ctx);
+
+		return tex;
+	}
+
+#endif
+
 }

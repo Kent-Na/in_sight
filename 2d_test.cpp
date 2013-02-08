@@ -38,10 +38,11 @@ int main(int argc, char** argv)
 		->scale_name_y("y")
 		->name("cell");
 
-	is::Size cell_size(512, 512);
-	uint8_t cell[cell_size.w*cell_size.h];
+	const size_t cell_s = 512;
+	is::Size cell_size(cell_s, cell_s);
+	uint8_t cell[cell_s*cell_s];
 	capture_image(img, &info, cell, cell_size);
-	BnComplex c_cell[cell_size.w*cell_size.h];
+	BnComplex c_cell[cell_s*cell_s];
 	for (size_t i= 0; i<cell_size.w*cell_size.h; i++){
 		c_cell[i] = cell[i];
 	}

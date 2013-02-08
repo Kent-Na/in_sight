@@ -3,6 +3,7 @@ Import('env')
 
 mainFiles = [
 	'is_core.cpp',
+	'is_glut.cpp',
 	'is_texture.cpp',
 	'is_layouter.cpp',
 	'is_graphics.cpp',
@@ -23,3 +24,8 @@ main = ['2d_test.cpp']
 main.extend(mainFiles)
 
 env.Program(target = '2d_test', source = main)
+
+main = ['simple_test.cpp']
+main.extend(mainFiles)
+
+env.Program(target = 'simple_test', source = main)

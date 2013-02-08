@@ -166,6 +166,14 @@ namespace is{
 			return _view_class;
 		}
 
+        Data* group(const char* name){
+            return this;
+        }
+	};
+
+	class Data_group{
+		std::vector<Data*> data_list;
+
 	};
 
 	enum data_flag : uint32_t{
