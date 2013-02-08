@@ -1,9 +1,15 @@
-//#include <ft2build.h>
-//#include FT_FREETYPE_H
+#include "is_config.h"
 
+#ifdef IS_USE_FREETYPE
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#endif
+
+#ifdef IS_USE_COCOA
 #include <CoreText/CoreText.h>
 #include <ApplicationServices/ApplicationServices.h>
-#include "is_config.h"
+#endif
+
 #include "is_pch.h"
 #include "is_header_all.h"
 #include "is_texture.h"
@@ -116,7 +122,6 @@ namespace is{
 	}
 #endif
     
-#define IS_USE_COCOA
 #ifdef IS_USE_COCOA
 	Text_texture::Text_texture(){
 	}

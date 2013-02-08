@@ -12,7 +12,7 @@
 
 
 #ifdef IS_USE_GLUT
-#include "is_GLUT.h"
+#include "is_glut.h"
 #endif
 
 #ifdef IS_USE_COCOA
