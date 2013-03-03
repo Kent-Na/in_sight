@@ -27,4 +27,5 @@ namespace is{
 			data[i]=data[i+half_kernel_size]-sum*s;
 		}
 	}
+	
 }

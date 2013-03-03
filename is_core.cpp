@@ -130,7 +130,7 @@ namespace is{
 		Point vp = {p.x-list_w, p.y};
 		layouter->layout(vs);
 		if (not dlr.in_side(p)){
-			layouter->wheel_move(core, vs, vp, dx, dy);
+			layouter->wheel_move(core, vs, vp, dx, -dy);
 		}
 	}
 	void Window::key_down(Size s, uint8_t key){
@@ -149,6 +149,12 @@ namespace is{
 		}
 		if (key == 'h'){
 			layouter->event(core, scroll_x_minus);
+		}
+		if (key == 'c'){
+			layouter->event(core, scroll_y_plus);
+		}
+		if (key == 't'){
+			layouter->event(core, scroll_y_minus);
 		}
 		if (key == 27){
 			exit(0);

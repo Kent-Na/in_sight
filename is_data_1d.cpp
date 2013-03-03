@@ -5,6 +5,7 @@
 #include "is_core.h"
 #include "is_color.h"
 #include "is_graphics.h"
+#include "is_ui_parts.h"
 #include "is_data_1d.h"
 
 namespace is{

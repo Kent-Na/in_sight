@@ -7,6 +7,7 @@
 #include "is_texture.h"
 #include "is_graphics.h"
 #include "is_core.h"
+#include "is_ui_parts.h"
 #include "is_data_1d.h"
 #include "is_data_2d.h"
 

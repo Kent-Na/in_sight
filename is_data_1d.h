@@ -128,7 +128,7 @@ namespace is{
 
 			s_s << data->name() << "[" << s_name << ":"
 				<< forcused_idx << "] = ";
-			if (forcused_idx >= 0 && forcused_idx < data->size()){
+			if (forcused_idx < data->size()){
 				const double value = (*data)[forcused_idx];
 				s_s << value;
 			}
@@ -151,14 +151,8 @@ namespace is{
 			const Data_1d<T>* data = (Data_1d<T>*)this->data;
 
 			Size ss = {50,12};
-			Size vs = {s.w/(double)data->size()*ss.w,ss.h};
 			Point sp = {s.w - ss.w, 1};
-			Point vp = {(size_t)(sp.x + idx_start/(double)data->size()*ss.w), sp.y};
-            if (vs.w==0) vs.w = 1;
-            color::grid();
-			draw_rect(sp.x, sp.y, ss.w, ss.h);
-			color::hilight();
-			draw_rect(vp.x, vp.y, vs.w, vs.h);
+			draw_seek_bar(sp, ss, data->size(), idx_start, idx_end(s));
 		}
 
 		void mouse_move(Core *c,Size s, Point p){

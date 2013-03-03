@@ -11,7 +11,9 @@
 @end
 
 @implementation IsCocoaOpenGLView
-
+- (BOOL)acceptsFirstResponder{
+    return YES;
+}
 -(void)viewDidMoveToWindow {
 	[[self window] setAcceptsMouseMovedEvents:YES];
 }
@@ -63,9 +65,18 @@
 }
 
 - (void)mouseMoved:(NSEvent *)theEvent{
-	//NSPoint pp=[self convertPoint:[theEvent locationInWindow]fromView:nil];
-	//if (system)
-	//	system->moveMouse(*(BnTvector*)&pp);
+	[[self openGLContext] makeCurrentContext];
+	NSSize size=[self frame].size;
+    is::Size s;
+    s.w = size.width;
+    s.h = size.height;
+	NSPoint pp=[self convertPoint:[theEvent locationInWindow]fromView:nil];
+    is::Point p = {(size_t)pp.x, (size_t)pp.y};
+    [self is_window]->mouse_move(s, p);
+    [self is_window]->update(s);
+    //system->triggerMouseDown([theEvent buttonNumber]);
+	glFlush();
+	[[self openGLContext] flushBuffer];
 }
 
 - (void)mouseDragged:(NSEvent *)theEvent{
@@ -98,6 +109,17 @@
 
 //keybord event
 - (void)keyDown:(NSEvent *)theEvent{
+    [[self openGLContext] makeCurrentContext];
+	NSSize size=[self frame].size;
+    is::Size s;
+    s.w = size.width;
+    s.h = size.height;
+	NSPoint pp=[self convertPoint:[theEvent locationInWindow]fromView:nil];
+    [self is_window]->key_down(s,[[theEvent characters]characterAtIndex:0]);
+    [self is_window]->update(s);
+    //system->triggerMouseDown([theEvent buttonNumber]);
+	glFlush();
+	[[self openGLContext] flushBuffer];
 	//if (system)
 	//	system->triggerKeyDown([theEvent keyCode]);
 }

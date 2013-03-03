@@ -80,6 +80,7 @@ namespace is{
 		}
 		return x_0;
 	}
+    
 	GLuint Text_texture::generate(Size &s, const char* text){
 		//init freetype
 		FT_Error error;
@@ -128,11 +129,58 @@ namespace is{
 
 	Text_texture::~Text_texture(){
 	}
+    
+    static CTLineRef makeLineFrom(Size &s, const char* text){
+		CFMutableDictionaryRef attr =
+        CFDictionaryCreateMutable(NULL, 1, NULL, NULL);
+		CTFontRef font =
+        CTFontCreateUIFontForLanguage(
+                                      kCTFontUserFontType, s.h*0.9, NULL);
+		CFDictionaryAddValue(
+                             attr, kCTFontAttributeName, font);
+        CGColorRef fcolor = CGColorCreateGenericGray(1.0, 1.0);
+		CFDictionaryAddValue(
+                             attr, kCTForegroundColorAttributeName, fcolor);
+		CFStringRef str =
+        CFStringCreateWithBytes(
+                                NULL, (uint8_t*)text, strlen(text),
+                                kCFStringEncodingUTF8, false);
+
+		CFAttributedStringRef fstr =
+        CFAttributedStringCreate(NULL, str, attr);
+		CTLineRef ln = CTLineCreateWithAttributedString(fstr);
+
+        CFRelease(fstr);
+		CFRelease(str);
+		CFRelease(font);
+		CFRelease(attr);
+        //CGColorRelease(fcolor);
+
+        return ln;
+    }
 
 	size_t Text_texture::width(size_t h,const char* text){
-			return 200;
-	}
+        Size s(1,h);
+		CGColorSpaceRef color_space = CGColorSpaceCreateDeviceGray();
+		CGContextRef ctx = CGBitmapContextCreate(
+                                                 NULL,
+                                                 s.w, s.h, 8, s.w,
+                                                 color_space, 0);
 
+		CGColorSpaceRelease(color_space);
+
+		uint8_t *out_bitmap = (uint8_t*)CGBitmapContextGetData(ctx);
+
+		CGContextSetTextPosition(ctx, 0, s.h*0.2);
+        
+        CTLineRef ln = makeLineFrom(s, text);
+        double rVal = CTLineGetImageBounds(ln, ctx).size.width;
+        
+		CGContextRelease(ctx);
+        
+        return rVal+2;
+	}
+    
 	GLuint Text_texture::generate(Size &s, const char* text){
 
 		CGColorSpaceRef color_space = CGColorSpaceCreateDeviceGray();
@@ -147,32 +195,8 @@ namespace is{
 
 		CGContextSetTextPosition(ctx, 0, s.h*0.2);
 
-		CFMutableDictionaryRef attr = 
-			CFDictionaryCreateMutable(NULL, 1, NULL, NULL);
-		CTFontRef font = 
-			CTFontCreateUIFontForLanguage(
-					kCTFontUserFontType, s.h*0.9, NULL);
-		CFDictionaryAddValue(
-					attr, kCTFontAttributeName, font);
-        CGColorRef fcolor = CGColorCreateGenericGray(1.0, 1.0);
-		CFDictionaryAddValue(
-					attr, kCTForegroundColorAttributeName, fcolor);
-		CFStringRef str = 
-			CFStringCreateWithBytes(
-					NULL, (uint8_t*)text, strlen(text),
-					kCFStringEncodingUTF8, false);
-
-		CFAttributedStringRef fstr =
-			CFAttributedStringCreate(NULL, str, attr);
-		CTLineRef ln = CTLineCreateWithAttributedString(fstr);
+        CTLineRef ln = makeLineFrom(s, text);
 		CTLineDraw(ln, ctx);
-
-		CFRelease(fstr);
-        CGColorRelease(fcolor);
-		CFRelease(str);
-		CFRelease(font);
-		CFRelease(attr);
-
 
 		GLuint tex = texture_from_grayscale(out_bitmap, s.w, s.h);
 
