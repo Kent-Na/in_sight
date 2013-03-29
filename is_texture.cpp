@@ -28,6 +28,18 @@ namespace is{
 		return tex;
 	}
 
+	GLuint texture_from_rgb(uint8_t *img, size_t w, size_t h){
+		GLuint tex = 0;	
+		glGenTextures(1, &tex);
+
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0,
+				GL_RGB, GL_UNSIGNED_BYTE, img);
+		return tex;
+	}
+
 	void draw_texture(GLuint tex, double x, double y, double w, double h){
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glBegin(GL_TRIANGLE_FAN);

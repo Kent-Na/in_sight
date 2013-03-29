@@ -189,12 +189,33 @@ namespace is{
 
 	using Data_list = std::vector<Data_with_flags>;
 
+	struct Data_1d_info{
+		size_t size;
+		size_t channel;
+	};
+
 	struct Image_info{
 		size_t w;//width
 		size_t h;//height
 		size_t channel;//1 for grayscale, 3 for RGB...
 		size_t bytes_per_row;
 		size_t bytes_per_pixel;
+
+		void init_as_grayscale(size_t w, size_t h){
+			this->w = w;
+			this->h = h;
+			this->channel = 1;
+			this->bytes_per_row = w;
+			this->bytes_per_pixel = 1;
+		}
+
+		void init_as_rgb(size_t w, size_t h){
+			this->w = w;
+			this->h = h;
+			this->channel = 3;
+			this->bytes_per_row = w*3;
+			this->bytes_per_pixel = 3;
+		}
 	};
 /*
 	class Port{

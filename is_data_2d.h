@@ -10,7 +10,9 @@ namespace is{
 			for (size_t x = 0; x<input_info->w; x++){
 				const uint8_t *pixel_adr = 
 					row_adr+x*input_info->bytes_per_pixel;
-				*(itr++) = *pixel_adr;
+				for (size_t ch = 0; ch<input_info->channel; ch++){
+					*(itr++) = pixel_adr[ch];
+				}
 			}
 		}
 	}
@@ -24,7 +26,7 @@ namespace is{
     public:
 		GLuint tex;
 		Data_2d(Core *c, uint8_t *d, Image_info *i){
-			const size_t data_size = i->w*i->h;
+			const size_t data_size = i->w*i->h*i->channel;
 			data = (uint8_t*)malloc(data_size);
 			capture_image(d, i, data, Size(i->w, i->h));
 			tex = 0;
@@ -41,7 +43,10 @@ namespace is{
 		void rebuild_texture(){
 			if (tex)
 				glDeleteTextures(1, &tex);
-			tex = texture_from_grayscale(data, info.w, info.h);
+			if (info.channel == 1)
+				tex = texture_from_grayscale(data, info.w, info.h);
+			else if (info.channel == 3)
+				tex = texture_from_rgb(data, info.w, info.h);
 		}
 
 		Size image_size() const{

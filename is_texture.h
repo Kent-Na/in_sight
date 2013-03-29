@@ -2,6 +2,7 @@
 namespace is{
 
 	GLuint texture_from_grayscale(uint8_t *img, size_t w, size_t h);
+	GLuint texture_from_rgb(uint8_t *img, size_t w, size_t h);
 	void draw_texture(GLuint tex, double x, double y, double w, double h);
 
 #ifdef IS_USE_FREETYPE
