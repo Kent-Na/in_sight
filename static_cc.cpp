@@ -14,7 +14,7 @@ int main(int argc, char** argv)
 	uint8_t img[w*h];
 
 	auto f = fopen("home/czel/sample_raw_b.raw","r");
-	while (not feof){
+	while (not feof(f)){
 		fread(img, w*h, 1, f);
 		
 		//tracker->process(img, w, h);

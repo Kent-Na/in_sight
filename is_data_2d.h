@@ -134,7 +134,7 @@ namespace is{
 			size_t forcused_idx_vx = c->get_scale(s_name_x)-idx_start_x;
 			size_t forcused_idx_vy = c->get_scale(s_name_y)-idx_start_y;
 
-            double g_delta = 200/12.0;
+            double g_delta = 8;
 
             glBindTexture(GL_TEXTURE_2D, 0);
 			glColor4d(0.8,0.7,0.1,0.4);
@@ -145,11 +145,11 @@ namespace is{
 			glVertex2d(0,forcused_idx_vy);
 			glVertex2d(vs.w,forcused_idx_vy);
             for (size_t i=1 ; i<=12; i++){
-                if (forcused_idx_vy+g_delta*i<0 ||
-                    forcused_idx_vy+g_delta*i>s.h-header_size)
+                if (forcused_idx_vx+g_delta*i<0 ||
+                    forcused_idx_vx+g_delta*i>s.w-header_size)
                     continue;
-                glVertex2d(0,forcused_idx_vy+g_delta*i);
-                glVertex2d(vs.w,forcused_idx_vy+g_delta*i);
+                glVertex2d(forcused_idx_vx+g_delta*i,0);
+                glVertex2d(forcused_idx_vx+g_delta*i,vs.h);
             }
 			glEnd();
 

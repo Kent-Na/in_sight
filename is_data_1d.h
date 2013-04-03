@@ -167,8 +167,12 @@ namespace is{
 				idx_start += delta;
 
 			const Data_1d<T>* data = (Data_1d<T>*)this->data;
-			if (idx_start+s.w > data->size())
-				idx_start = data->size()-s.w;
+			if (idx_start+s.w > data->size()){
+				if (data->size()<s.w)
+					idx_start = 0;
+				else
+					idx_start = data->size()-s.w;
+			}
 		}
 		void wheel_move(Core *c, Size s, Point p,
 						int32_t dx, int32_t dy){
