@@ -2,6 +2,8 @@
 #include "is_pch.h"
 #include "is_header_all.h"
 #include "is_texture.h"
+#include "is_event.h"
+#include "is_view.h"
 #include "is_core.h"
 #include "is_glut.h"
 
@@ -24,9 +26,6 @@ namespace GLUT{
 	}
 
 	void mouse(int Button, int State, int x, int y){
-		if (State != GLUT_UP)
-			return;
-
 		int window_id = glutGetWindow();
 		Window *window = window_map[window_id];
 
@@ -36,9 +35,18 @@ namespace GLUT{
 
 		Point p = {(size_t)x, (size_t)s.h-y};
 
+		if (State == GLUT_DOWN)
+			window->mouse_down(s, p, Button);
+		else if (State == GLUT_UP)
+			window->mouse_up(s, p, Button);
+		else
+			printf("OMG!!\n");
+
+		window->update(s);
+		glutSwapBuffers();
+
+		/*
 		const int amount_of_schroll = 20;
-		if (Button == 0)
-			window->mouse(s, p);
 		if (Button == 3)//up
 			window->wheel_move(s, p, 0, amount_of_schroll);
 		if (Button == 4)//down
@@ -47,12 +55,22 @@ namespace GLUT{
 			window->wheel_move(s, p, amount_of_schroll, 0);
 		if (Button == 6)//right
 			window->wheel_move(s, p, -amount_of_schroll, 0);
-		window->update(s);
-		glutSwapBuffers();
+			*/
 	}
 
 	void motion(int x, int y){
+		int window_id = glutGetWindow();
+		Window *window = window_map[window_id];
 
+		Size s;
+		s.w = glutGet(GLUT_WINDOW_WIDTH);
+		s.h = glutGet(GLUT_WINDOW_HEIGHT);
+
+		Point p = {(size_t)x, (size_t)s.h-y};
+
+		window->mouse_drag(s, p);
+		window->update(s);
+		glutSwapBuffers();
 	}
 
 	void passive_motion(int x, int y){
@@ -91,7 +109,7 @@ namespace GLUT{
 	}
 
 	//It is GLUT window.
-	Window::Window(Core *c){
+	Window::Window(Core *c):is::Window(c){
 		int old_window_id = glutGetWindow();
 
 		glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);

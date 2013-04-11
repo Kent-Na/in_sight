@@ -2,24 +2,50 @@
 #include "is_pch.h"
 
 #include "is_header_all.h"
-#include "is_layouter.h"
 #include "is_texture.h"
-#include "is_core.h"
 #include "is_color.h"
 #include "is_graphics.h"
-#include "is_data_list.h"
-#include "is_data_1d.h"
+#include "is_event.h"
+#include "is_view.h"
+#include "is_core.h"
 
 
 namespace is{
 
-	void Core::update(Size s){
-		
+	Core::Core(){
+		default_view = new View_list;
+		main_window = NULL;
 	}
 
-	Window::Window(){
-		core = NULL;
-		layouter = NULL;
+	size_t Core::get_scale(std::string name){
+		if (scale.count(name))
+			return scale[name];
+		return 0;
+	}
+	void Core::set_scale(std::string name, size_t value){
+		scale[name] = value;
+	}
+	void Core::add(View *v){
+		if (default_view){
+			default_view->add(v);
+		}
+		else if (main_window){
+			main_window->add(v);
+		}
+		else{
+			printf("WTF\n");
+		};
+	}
+
+	Window::Window(Core* c):core(c){
+		event = new Event;
+		root_view = c->default_view;
+		c->main_window = this;
+		c->default_view = NULL;
+	}
+
+	Window::~Window(){
+		delete event;
 	}
 
 	void Window::setup_matrix(Size s){
@@ -28,6 +54,10 @@ namespace is{
 		glMatrixMode(GL_VIEWPORT);
 		glLoadIdentity();
 		glOrtho(0, s.w, 0, s.h, -100, 100);
+	}
+
+	void Window::add(View *v){
+		root_view->add(v);
 	}
 
 	void Window::setup_GL_option(){
@@ -39,38 +69,6 @@ namespace is{
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
-	void Window::reload(){
-		std::map<Data*, View*> old_views;
-		if (layouter){
-			for (size_t i= 0; i<layouter->size(); i++){
-				View* v = layouter->view(i);
-				old_views[v->data] = v;
-			}
-			layouter->detach_all_view();
-			delete layouter;
-		}
-
-		layouter = new Virtical_layouter_v1;
-
-		Data_list &data_list = core->get_data_list();
-
-		for (auto itr = data_list.begin(); 
-				itr != data_list.end(); itr++){
-			if (!(itr->flag&visible))
-				continue;
-			auto v_itr = old_views.find(itr->data);
-			if (v_itr == old_views.end()){
-				View* v = itr->data->default_view();
-				v->data = itr->data;
-				layouter->add_view(v);
-			}
-			else{
-				layouter->add_view(v_itr->second);
-				old_views.erase(v_itr);
-			}
-		}
-	}
-
 	void Window::update(Size s){
 
 		setup_matrix(s);
@@ -80,87 +78,92 @@ namespace is{
 		color::background();
 		draw_rect(0,0,s.w,s.h);
 
-		const size_t list_w = 84;
-		
-		//if (not layouter)
-		reload();
+		if (root_view){
+			root_view->frame(Rect(0,0,s.w, s.h));
+			root_view->update(core);
+		}
 
-		Size vs = {s.w-list_w, s.h};
-		layouter->layout(vs);
-
-		glPushMatrix();
-		glTranslated(list_w, 0, 0);
-		layouter->update(core, vs);
-		glPopMatrix();
-
-		Data_list &data_list = core->get_data_list();
-
-		Data_list_view dl;
-		Size dls = {list_w, s.h};
-		dl.update(data_list, dls);
 	}
 
-	void Window::mouse(Size s, Point p){
-		const size_t list_w = 84;
-		Data_list_view dl;
-		Rect dlr(0,0,list_w, s.h);
+	View* Window::view_at(Point p){
+		if (root_view)
+			return root_view->view_at(p);
+		return NULL;
+	}
 
-		if (dlr.in_side(p)){
-			Data_list &data_list = core->get_data_list();
-			dl.select(data_list, s, p);
+	void Window::mouse_down(Size s, Point p, uint8_t button_id){
+		event->cursor(p);
+		if (m_tracker.count(button_id))
+			printf("bad thing happen\n");
+
+		View* target_view = view_at(p);
+		Mouse_event_tracker* tracker = 
+			target_view->begin_mouse_event(core, event, button_id);
+		if (tracker){
+			tracker->button_id(button_id);
+			tracker->mouse_down(core, event);
+		}
+	}
+
+	void Window::mouse_drag(Size s, Point p){
+		event->cursor(p);
+		for (auto itr = m_tracker.begin();
+				itr != m_tracker.end(); itr++){
+			Mouse_event_tracker* tracker = itr->second;
+			tracker->mouse_drag(core, event);
+		}
+	}
+
+	void Window::mouse_up(Size s, Point p, uint8_t button_id){
+		event->cursor(p);
+		if (m_tracker.count(button_id)){
+			Mouse_event_tracker* tracker = m_tracker[button_id];
+			tracker->mouse_up(core, event);
+			m_tracker.erase(button_id);
+			delete tracker;
 		}
 	}
 
 	void Window::mouse_move(Size s, Point p){
-		const size_t list_w = 84;
-		Rect dlr(0,0,list_w, s.h);
+		event->cursor(p);
+		View* target_view = view_at(p);
+		if (target_view)
+			target_view->mouse_move(core, event);
 
-		Size vs = {s.w-list_w, s.h};
-		Point vp = {p.x-list_w, p.y};
-		layouter->layout(vs);
-		if (not dlr.in_side(p)){
-			layouter->mouse_move(core, vs, vp);
-		}
 	}
 	void Window::wheel_move(Size s, Point p, uint32_t dx, uint32_t dy){
-		const size_t list_w = 84;
-		Rect dlr(0,0,list_w, s.h);
-
-		Size vs = {s.w-list_w, s.h};
-		Point vp = {p.x-list_w, p.y};
-		layouter->layout(vs);
-		if (not dlr.in_side(p)){
-			layouter->wheel_move(core, vs, vp, dx, -dy);
-		}
+		event->cursor(p);
+		View* target_view = view_at(p);
+		if (target_view)
+			target_view->scroll(core, event, dx, dy, 0);
 	}
 	void Window::key_down(Size s, uint8_t key){
-		if (key == 'a'){
-			Data_list &data_list = core->get_data_list();
-			for (size_t i=0; i<data_list.size(); i++)
-				data_list[i].flag = true;
-		}
-		if (key == 'A'){
-			Data_list &data_list = core->get_data_list();
-			for (size_t i=0; i<data_list.size(); i++)
-				data_list[i].flag = false;
-		}
-		if (key == 'n'){
-			layouter->event(core, scroll_x_plus);
-		}
-		if (key == 'h'){
-			layouter->event(core, scroll_x_minus);
-		}
-		if (key == 'c'){
-			layouter->event(core, scroll_y_plus);
-		}
-		if (key == 't'){
-			layouter->event(core, scroll_y_minus);
-		}
 		if (key == 27){
 			exit(0);
 		}
-	}
+		root_view->key_down(core, event, key);
 
+		View* target_view = view_at(event->cursor());
+		if (!target_view) return;
+	
+		int32_t amount = 32;
+
+		if (key == 'n'){
+			target_view->scroll(core, event, amount, 0, 0);
+		}
+		if (key == 'h'){
+			target_view->scroll(core, event, -amount, 0, 0);
+		}
+		if (key == 'c'){
+			target_view->scroll(core, event, 0, amount, 0);
+		}
+		if (key == 't'){
+			target_view->scroll(core, event, 0, -amount, 0);
+		}
+	}
+	void Window::key_up(Size s, uint8_t key){
+
+	}
 }
 
 

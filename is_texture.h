@@ -27,4 +27,6 @@ namespace is{
 		GLuint generate(Size &s, const char* text);
     };
 #endif
+
+	Text_texture* shared_text_texture();
 }

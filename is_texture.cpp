@@ -49,6 +49,14 @@ namespace is{
 		glTexCoord2f(1,1);	glVertex2f(x+w,y+0);
 		glEnd();
 	}
+
+	static Text_texture* _shared_text_texture = NULL;
+	Text_texture* shared_text_texture(){
+		if (not _shared_text_texture)
+			_shared_text_texture = new Text_texture;
+		return _shared_text_texture;
+	}
+
 #ifdef IS_USE_FREETYPE
 
 	Text_texture::Text_texture(){
@@ -128,7 +136,7 @@ namespace is{
 			y_0 += face->glyph->advance.y/64;
 			itr++;
 		}
-		
+
 		GLuint tex = texture_from_grayscale(out_bitmap, s.w, s.h);
 		free(out_bitmap);
 		return tex;
@@ -142,7 +150,7 @@ namespace is{
 	Text_texture::~Text_texture(){
 	}
     
-    static CTLineRef makeLineFrom(Size &s, const char* text){
+    statcc CTLineRef makeLineFrom(Size &s, const char* text){
 		CFMutableDictionaryRef attr =
         CFDictionaryCreateMutable(NULL, 1, NULL, NULL);
 		CTFontRef font =

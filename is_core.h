@@ -1,47 +1,45 @@
 namespace is{
 	
+
 	class Core{
 		std::map<std::string,size_t> scale;
-		//std::vector<Data*> data_list;
-		Data_list data_list;
-		Text_texture tt;
-		//input container
 
 		public:
-		void add_data(Data *d){
-			data_list.push_back(d);
-		}
-		Data_list& get_data_list(){
-			return data_list;
-		}
-		void update(Size s);
+		View_list* default_view;
+		Window* main_window;
 
-		size_t get_scale(std::string name){
-			if (scale.count(name))
-				return scale[name];
-			return 0;
-		}
-		void set_scale(std::string name, size_t value){
-			scale[name] = value;
-		}
+		Core();
 
-		void run_GLUT(int argc, char** argv);
+		size_t get_scale(std::string name);
+		void set_scale(std::string name, size_t value);
+
+		void add(View *v);
 	};
 
 	class Window{
 		void setup_GL_option();
 		void setup_matrix(Size s);
-		Layouter *layouter; 
+		View_list* root_view;
+		Event* event;
+		std::map<uint8_t, Mouse_event_tracker*> m_tracker;
+
+		View* view_at(Point p);
+
 		public:
 		Core *core;
-		Window();
-		//load all data from core and put those to window
-		void reload();
+		Window(Core* c);
+		virtual ~Window();
+
+		void add(View *v);
+
 		void update(Size s);
-		void mouse(Size s, Point p);
+		void mouse_down(Size s, Point p, uint8_t button_id);
+		void mouse_drag(Size s, Point p);
+		void mouse_up(Size s, Point p, uint8_t button_id);
 		void mouse_move(Size s, Point p);
 		void wheel_move(Size s, Point p, uint32_t dx, uint32_t dy);
 		void key_down(Size s, uint8_t key);
+		void key_up(Size s, uint8_t key);
 	};
 }
 
