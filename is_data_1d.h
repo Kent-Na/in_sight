@@ -139,8 +139,10 @@ namespace is{
 			std::stringstream s_s;
 
 			size_t forcused_idx = c->get_scale(_scale_name);
+			std::string name = _data->name();
+			if (name.empty()) name = View::name();
 
-			s_s << _data->name() << "[" << _scale_name << ":"
+			s_s << name << "[" << _scale_name << ":"
 				<< forcused_idx << "] = ";
 			if (forcused_idx < _data->size()){
 				const double value = (*_data)[forcused_idx];
@@ -263,7 +265,9 @@ namespace is{
 	class View_1d_label:public View_1d_graph_base<T>{
 		public:
 
-		static Class_object<View, View_1d_label<T>> klass;
+		//static Class_object<View, View_1d_label<T>> klass;
+
+		using View_1d_graph_base<T>::View_1d_graph_base;
 
 		size_t max_h(){
 			return 14;
@@ -271,10 +275,16 @@ namespace is{
 		size_t min_h(){
 			return 14;
 		}
-		void update(Core *c,Size s) const{
-			this->update_header(c, s);
-		}
 
+		void update(Core *c){
+			Rect f = this->frame();
+			const size_t header_size = 14;
+
+			glPushMatrix();
+			glTranslated(f.p.x,f.p.y,0);
+			this->update_header(c, f.s);
+			glPopMatrix();
+		}
 	};
 
 	template <typename T = double>

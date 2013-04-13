@@ -90,7 +90,7 @@ namespace is{
 
 		public:
 		Data(){
-			_name = "void";
+			//_name = "void";
 		}
 
 		///
