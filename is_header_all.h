@@ -29,18 +29,8 @@ namespace is{
 	};
 
 	struct Rect{
-		union{
-			struct{
-				Point p;
-				Size s;
-			};
-			struct{
-				size_t x;
-				size_t y;
-				size_t w;
-				size_t h;
-			};
-		};
+		Point p;
+		Size s;
 
 		Rect(){}
 		Rect(Point p, Size s){

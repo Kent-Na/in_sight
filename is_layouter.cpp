@@ -13,14 +13,14 @@ namespace is{
 		return 0;
 	}
 	size_t Virtical_layouter::layout(Rect r, std::vector<View*> vs){
-		double cell_h = r.h/(double)vs.size();
+		double cell_h = r.s.h/(double)vs.size();
 		for (size_t i=0; i<vs.size(); i++){
 			View *v = vs[i];
 			Rect f;
-			f.x = r.x;
-			f.w = r.w;
-			f.y = r.y+ceil(cell_h*i);
-			f.h = r.y+ceil(cell_h);
+			f.p.x = r.p.x;
+			f.s.w = r.s.w;
+			f.p.y = r.p.y+ceil(cell_h*i);
+			f.s.h = ceil(cell_h*(i+1)) - ceil(cell_h*i);
 			v->frame(f);
 		}
 		return vs.size();
@@ -86,10 +86,10 @@ namespace is{
 		size_t v_pos = 0;
 		for (size_t i=0; i<visible_count; i++){
 			Rect f;
-			f.x = r.x;
-			f.w = s.w;
-			f.y = r.y+v_pos;
-			f.h = info[i].h;
+			f.p.x = r.p.x;
+			f.s.w = s.w;
+			f.p.y = r.p.y+v_pos;
+			f.s.h = info[i].h;
 			info[i].v->frame(f);
 			v_pos += info[i].h;
 		}

@@ -119,16 +119,17 @@ namespace is{
 			error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
 			FT_Bitmap &bitmap = face->glyph->bitmap;
 		
-			const size_t x_t = x_0 + face->glyph->bitmap_left;
-			const size_t y_t = y_0 - face->glyph->bitmap_top;
-			if (not (x_t<s.w)) break;
-			const size_t w = std::min(x_t+bitmap.width, s.w)-x_t;
-			const size_t h = std::min(y_t+bitmap.rows, s.h)-y_t;
-			for (size_t y=0; y<h; y++){
+			const int32_t x_t = x_0 + face->glyph->bitmap_left;
+			const int32_t y_t = y_0 - face->glyph->bitmap_top;
+			if (not (x_t<(int32_t)s.w)){
+				break;
+			}
+			const size_t w = std::min<int32_t>(x_t+bitmap.width, s.w)-x_t;
+			const size_t h = std::min<int32_t>(y_t+bitmap.rows, s.h)-y_t;
+			for (size_t y=std::max(-y_t,0); y<h; y++){
 				uint8_t *in_row = bitmap.buffer+bitmap.width*y;
 				uint8_t *out_row = out_bitmap+(y+y_t)*s.w + x_t;
-				if (out_row<out_bitmap) continue;
-				for (size_t x=0; x<w; x++){
+				for (size_t x=std::max(-x_t,0); x<w; x++){
 					out_row[x] += in_row[x];
 				}
 			}

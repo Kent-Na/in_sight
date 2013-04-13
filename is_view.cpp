@@ -42,18 +42,18 @@ namespace is{
 
 	Point View::cursor_in_view_coord(Event *e) const{
 		Point c = e->cursor();
-		return Point(c.x-_frame.x, c.y-_frame.y);
+		return Point(c.x-_frame.p.x, c.y-_frame.p.y);
 	}
 
 	void Red_view::update(Core *c){ 
 		Rect f = frame();
 		glColor4d(1, 0, 0, 1);
-		draw_rect(f.x, f.y, f.w, f.h);
+		draw_rect(f.p.x, f.p.y, f.s.w, f.s.h);
 	}
 	void Blue_view::update(Core *c){ 
 		glColor4d(0, 0, 1, 1);
 		Rect f = frame();
-		draw_rect(f.x, f.y, f.w, f.h);
+		draw_rect(f.p.x, f.p.y, f.s.w, f.s.h);
 	}
 
 	View_list::View_list(){
@@ -139,8 +139,8 @@ namespace is{
 	
 	void View_list::layout(){
 		Rect f = frame();
-		f.x += list_width;
-		f.w -= list_width;
+		f.p.x += list_width;
+		f.s.w -= list_width;
 
 		std::vector<View*> vs;
 
@@ -175,14 +175,14 @@ namespace is{
 
 	void View_list::draw_list(){
 		Rect f = frame();
-		f.w = list_width;
+		f.s.w = list_width;
 
 		size_t count = list_slot_count();
 		recalculate_list_begin();
 
 		//clear background
 		color::light_background();
-		draw_rect(f.x, f.y, list_width, f.h);
+		draw_rect(f.p.x, f.p.y, list_width, f.s.h);
 
 		//draw elements
 		View* v = list_begin;
@@ -219,8 +219,8 @@ namespace is{
 	}
 	View* View_list::view_at(Point p){
 		Rect f = frame();
-		Rect vf(f.x+list_width, f.y, f.w-list_width, f.h);
-		Point cp(p.x-f.x, p.y-f.y);
+		Rect vf(f.p.x+list_width, f.p.y, f.s.w-list_width, f.s.h);
+		Point cp(p.x-f.p.x, p.y-f.p.y);
 		if (vf.in_side(cp)){
 			size_t ct = 0;
 			View* v= list_begin;

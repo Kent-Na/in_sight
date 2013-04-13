@@ -196,15 +196,15 @@ namespace is{
 			//draw_texture(data->tex, -(double)idx_start_x, -(double)idx_start_y, is.w, is.h);
 
 			glPushMatrix();
-			glTranslated(f.x, f.y, 0);
-            update_image(c, Size(f.w, f.h-header_size));
-            update_forcus(c, Size(f.w, f.h-header_size));
+			glTranslated(f.p.x, f.p.y, 0);
+            update_image(c, Size(f.s.w, f.s.h-header_size));
+            update_forcus(c, Size(f.s.w, f.s.h-header_size));
 			glPopMatrix();
             
             glPushMatrix();
-			glTranslated(f.x,f.y+f.h-header_size,0);
+			glTranslated(f.p.x,f.p.y+f.s.h-header_size,0);
 			update_header(c, f.s);
-            update_seek_bar(c, Size(f.w, f.h-header_size));
+            update_seek_bar(c, Size(f.s.w, f.s.h-header_size));
 			glPopMatrix();
 			//draw_texture(0, 0, 0, 100, 100);
 		}
@@ -276,14 +276,14 @@ namespace is{
 
 			Size is = _data->image_size();
 
-			if (idx_start_x+f.w > is.w)
-				idx_start_x = is.w-f.w;
-            if (idx_start_y+f.h > is.h)
-                idx_start_y = is.h-f.h;
+			if (idx_start_x+f.s.w > is.w)
+				idx_start_x = is.w-f.s.w;
+            if (idx_start_y+f.s.h > is.h)
+                idx_start_y = is.h-f.s.h;
 
-			if (is.w<f.w)
+			if (is.w<f.s.w)
 				idx_start_x = 0;
-			if (is.h<f.h)
+			if (is.h<f.s.h)
 				idx_start_y = 0;
 
 		}

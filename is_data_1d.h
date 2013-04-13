@@ -180,11 +180,11 @@ namespace is{
 			else
 				idx_start += dx;
 
-			if (idx_start+f.w > _data->size()){
-				if (_data->size()<f.w)
+			if (idx_start+f.s.w > _data->size()){
+				if (_data->size()<f.s.w)
 					idx_start = 0;
 				else
-					idx_start = _data->size()-f.w;
+					idx_start = _data->size()-f.s.w;
 			}
 		}
 	};
@@ -244,15 +244,15 @@ namespace is{
 			const size_t header_size = 14;
 
 			glPushMatrix();
-			glTranslated(f.x,f.y,0);
-			Size vs(f.w, f.h-header_size);
+			glTranslated(f.p.x,f.p.y,0);
+			Size vs(f.s.w, f.s.h-header_size);
 			this->update_grid(vs);
 			this->update_invalid(vs);
-			update_data(c,Size(f.w,f.h-header_size));
+			update_data(c,Size(f.s.w,f.s.h-header_size));
 			glPopMatrix();
 
 			glPushMatrix();
-			glTranslated(f.x,f.y+f.h-header_size,0);
+			glTranslated(f.p.x,f.p.y+f.s.h-header_size,0);
 			this->update_header(c, f.s);
 			glPopMatrix();
 		}
