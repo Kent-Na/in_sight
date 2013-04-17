@@ -61,12 +61,16 @@ namespace is{
 		View* back_list_element() const;
 		View* next_visible_element() const;
 
-		bool is_visible() const{ return _is_visible; };
+		void set_visible() { _is_visible = true; }
+		void set_temporaly_visible() { _is_temporaly_visible = true; }
+		void reset_temporaly_visible() { _is_temporaly_visible = false; }
+		bool is_visible() const
+			{ return _is_visible || _is_temporaly_visible; };
 
 		View* name(std::string);
 		std::string name() const;
 
-		friend View_list;
+		friend class View_list;
 	};
 
 	class Red_view:public View{
@@ -114,14 +118,6 @@ namespace is{
 		void draw_view(Core *c);
 		void draw_list();
 		void draw(View* v, size_t slot_idx);
-	};
-
-	class View_deselect_tracker:public Mouse_event_tracker{
-
-	};
-
-	class View_select_tracker:public Mouse_event_tracker{
-
 	};
 
 	class Data_view: public View{

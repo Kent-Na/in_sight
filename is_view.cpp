@@ -15,6 +15,7 @@ namespace is{
 		_back = NULL;
 
 		_is_visible=false;
+		_is_temporaly_visible=false;
 	}
 	View* View::next_list_element() const{
 		return _next;
@@ -146,7 +147,7 @@ namespace is{
 
 		View* v= list_begin;
 		while(v){
-			if (v->_is_visible){
+			if (v->is_visible()){
 				vs.push_back(v);
 			}
 			v= v->next_list_element();
@@ -165,7 +166,7 @@ namespace is{
 		size_t ct = 0;
 		View* v= list_begin;
 		while(v && ct != active_view_count){
-			if (v->_is_visible){
+			if (v->is_visible()){
 				v->update(c);
 				ct ++;
 			}
@@ -225,7 +226,7 @@ namespace is{
 			size_t ct = 0;
 			View* v= list_begin;
 			while(v && ct != active_view_count){
-				if (v->_is_visible){
+				if (v->is_visible()){
 					if (v->frame().in_side(cp))
 						return v->view_at(p);
 					ct ++;

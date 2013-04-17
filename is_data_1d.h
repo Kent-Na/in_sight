@@ -267,7 +267,12 @@ namespace is{
 
 		//static Class_object<View, View_1d_label<T>> klass;
 
-		using View_1d_graph_base<T>::View_1d_graph_base;
+		//using View_1d_graph_base<T>::View_1d_graph_base;
+
+		View_1d_label(Core *c, std::vector<T> d):
+			View_1d_graph_base<>(c, d) { return; }
+		View_1d_label(Core *c, T* d, size_t len):
+			View_1d_graph_base<>(c, d, len) { return; }
 
 		size_t max_h(){
 			return 14;
