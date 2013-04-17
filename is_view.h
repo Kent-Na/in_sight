@@ -62,6 +62,7 @@ namespace is{
 		View* next_visible_element() const;
 
 		void set_visible() { _is_visible = true; }
+		void reset_visible() { _is_visible = false; }
 		void set_temporaly_visible() { _is_temporaly_visible = true; }
 		void reset_temporaly_visible() { _is_temporaly_visible = false; }
 		bool is_visible() const
@@ -111,6 +112,11 @@ namespace is{
 		void recalculate_list_begin();
 		size_t slot_at(Event *e);
 		View* view_at_slot(size_t slot_idx);
+
+		void set_tmp_visible(size_t begin, size_t end);
+		void reset_tmp_visible(size_t begin, size_t end);
+		void set_visible(size_t begin, size_t end);
+		void reset_visible(size_t begin, size_t end);
 
 		void layout();
 		void update(Core *c);

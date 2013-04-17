@@ -102,6 +102,7 @@ namespace is{
 		if (tracker){
 			tracker->button_id(button_id);
 			tracker->mouse_down(core, event);
+			m_tracker[button_id] = tracker;
 		}
 	}
 

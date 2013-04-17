@@ -5,14 +5,14 @@ namespace is{
 		uint8_t _button_id;
 
 		public:
-		virtual ~Mouse_event_tracker() = 0;
+		virtual ~Mouse_event_tracker(){ };
 
 		uint8_t button_id() const { return _button_id; }
 		void button_id(uint8_t id){ _button_id = id; }
 
-		virtual void mouse_down(Core *c, Event *e);
-		virtual void mouse_drag(Core *c, Event *e);
-		virtual void mouse_up(Core *c, Event *e);
+		virtual void mouse_down(Core *c, Event *e){};
+		virtual void mouse_drag(Core *c, Event *e){};
+		virtual void mouse_up(Core *c, Event *e){};
 	};
 
 	class Event{

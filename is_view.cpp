@@ -138,6 +138,47 @@ namespace is{
 		return v;
 	}
 	
+	void View_list::set_tmp_visible(size_t begin, size_t end){
+		View* v = view_at_slot(std::min(begin, end));
+		size_t count = abs(begin-end);
+		for (int i = 0; i<=count; i++){
+			if (v == NULL)
+				return;
+			v->set_temporaly_visible();
+			v = v->next_list_element();
+		}
+	}
+	void View_list::reset_tmp_visible(size_t begin, size_t end){
+		View* v = view_at_slot(std::min(begin, end));
+		size_t count = abs(begin-end);
+		for (int i = 0; i<=count; i++){
+			if (v == NULL)
+				return;
+			v->reset_temporaly_visible();
+			v = v->next_list_element();
+		}
+	}
+	void View_list::set_visible(size_t begin, size_t end){
+		View* v = view_at_slot(std::min(begin, end));
+		size_t count = abs(begin-end);
+		for (int i = 0; i<=count; i++){
+			if (v == NULL)
+				return;
+			v->set_visible();
+			v = v->next_list_element();
+		}
+	}
+	void View_list::reset_visible(size_t begin, size_t end){
+		View* v = view_at_slot(std::min(begin, end));
+		size_t count = abs(begin-end);
+		for (int i = 0; i<=count; i++){
+			if (v == NULL)
+				return;
+			v->reset_visible();
+			v = v->next_list_element();
+		}
+	}
+
 	void View_list::layout(){
 		Rect f = frame();
 		f.p.x += list_width;
@@ -236,9 +277,62 @@ namespace is{
 		}
 		return this;
 	}
+
+
+	class View_select_tracker:public Mouse_event_tracker{
+		View_list* target;
+		size_t begin;
+		size_t end;
+
+		public:
+		View_select_tracker(View_list* t):target(t){ };
+		~View_select_tracker(){ };
+
+		void mouse_down(Core *c, Event *e){
+			begin = target->slot_at(e);
+			end = begin;
+			target->set_tmp_visible(begin, end);
+		}
+		void mouse_drag(Core *c, Event *e){
+			target->reset_tmp_visible(begin, end);
+			end = target->slot_at(e);
+			target->set_tmp_visible(begin, end);
+		}
+		void mouse_up(Core *c, Event *e){
+			target->reset_tmp_visible(begin, end);
+			target->set_visible(begin, end);
+		}
+	};
+
+	class View_deselect_tracker:public Mouse_event_tracker{
+		View_list* target;
+		size_t begin;
+		size_t end;
+
+		public:
+		View_deselect_tracker(View_list* t):target(t){ };
+		~View_deselect_tracker(){ };
+
+		void mouse_down(Core *c, Event *e){
+			begin = target->slot_at(e);
+			end = begin;
+		}
+		void mouse_drag(Core *c, Event *e){
+			end = target->slot_at(e);
+		}
+		void mouse_up(Core *c, Event *e){
+			target->reset_visible(begin, end);
+		}
+	};
 	Mouse_event_tracker* 
 		View_list::begin_mouse_event(Core *c, Event *e, uint8_t button_id){
 		View* v = view_at_slot(slot_at(e));
+		if (button_id == 0 && v && not v->is_visible()){
+			return new View_select_tracker(this);
+		}
+		if (button_id == 0 && v && v->is_visible()){
+			return new View_deselect_tracker(this);
+		}
 		if (v)
 			v->_is_visible = !v->_is_visible;
 		return NULL;
