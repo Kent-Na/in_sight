@@ -16,6 +16,7 @@ namespace is{
 
 		_is_visible=false;
 		_is_temporaly_visible=false;
+		_is_marked=false;
 	}
 	View* View::next_list_element() const{
 		return _next;
@@ -41,6 +42,28 @@ namespace is{
 		return _name;
 	}
 
+	View* View::view_at(Point p){ 
+		return NULL; 
+	}
+	Mouse_event_tracker* 
+		View::begin_mouse_event(Core *c, Event *e, uint8_t button_id){
+		View* v = view_at(e->cursor());
+		if (v) return v->begin_mouse_event(c, e, button_id);
+		return NULL;
+	}
+	void View::mouse_move(Core *c, Event* e){
+		View* v = view_at(e->cursor());
+		if (v) v->mouse_move(c, e);
+	}
+	void View::scroll(Core *c, Event* e,int32_t dx, int32_t dy, int32_t dz){
+		View* v = view_at(e->cursor());
+		if (v) v->scroll(c, e, dx, dy, dz);
+	}
+	void View::key_down(Core *c, Event *e, uint8_t key_name){
+		View* v = view_at(e->cursor());
+		if (v) v->key_down(c, e, key_name);
+	}
+
 	Point View::cursor_in_view_coord(Event *e) const{
 		Point c = e->cursor();
 		return Point(c.x-_frame.p.x, c.y-_frame.p.y);
@@ -64,7 +87,9 @@ namespace is{
 		list_width = 84;
 		slot_height = 14;
 		active_view_count = 0;
+		mark_type = 0;
 		layouter = new Virtical_layouter_v1;
+		//layouter = new Horizontial_layouter_v1;
 	}
 
 	void View_list::add(View* v){
@@ -97,10 +122,22 @@ namespace is{
 			v= v->next_list_element();
 		}
 	}
+	void View_list::scroll_all
+		(Core *c, Event* e,int32_t dx, int32_t dy, int32_t dz){
+		size_t ct = 0;
+		View* v= list_begin;
+		while(v && ct != active_view_count){
+			if (v->is_visible()){
+				v->scroll(c, e, dx, dy, dz);
+				ct ++;
+			}
+			v= v->next_list_element();
+		}
+	}
 
 	size_t View_list::list_slot_count(){
-		return 20;
-
+		Rect f = frame();
+		return f.s.h/slot_height;
 	}
 	void View_list::recalculate_list_begin(){
 		size_t count = list_slot_count();
@@ -178,6 +215,34 @@ namespace is{
 			v = v->next_list_element();
 		}
 	}
+	void View_list::mark(size_t begin, size_t end){
+		View* v = view_at_slot(std::min(begin, end));
+		size_t count = abs(begin-end);
+		for (int i = 0; i<=count; i++){
+			if (v == NULL)
+				return;
+			v->mark();
+			v = v->next_list_element();
+		}
+	}
+	void View_list::unmark(size_t begin, size_t end){
+		View* v = view_at_slot(std::min(begin, end));
+		size_t count = abs(begin-end);
+		for (int i = 0; i<=count; i++){
+			if (v == NULL)
+				return;
+			v->unmark();
+			v = v->next_list_element();
+		}
+	}
+
+	bool View_list::is_visible(View* v){
+		bool cond0 = mark_type == 1 && 
+			(v->is_visible() || v->is_marked());
+		bool cond1 = mark_type == 2 && 
+			(v->is_visible() && ! v->is_marked());
+		return cond0 || cond1;
+	}
 
 	void View_list::layout(){
 		Rect f = frame();
@@ -188,7 +253,7 @@ namespace is{
 
 		View* v= list_begin;
 		while(v){
-			if (v->is_visible()){
+			if (is_visible(v)){
 				vs.push_back(v);
 			}
 			v= v->next_list_element();
@@ -207,7 +272,7 @@ namespace is{
 		size_t ct = 0;
 		View* v= list_begin;
 		while(v && ct != active_view_count){
-			if (v->is_visible()){
+			if (is_visible(v)){
 				v->update(c);
 				ct ++;
 			}
@@ -246,7 +311,7 @@ namespace is{
 
 		GLuint tex = tex_gen->generate(ts, v->name().c_str());
 
-		if (v->is_visible()){
+		if (is_visible(v)){
 			color::light_hilight();
 			draw_texture(0, 0, slot_idx*text_size, ts.w, ts.h);
 			color::light_text();
@@ -262,20 +327,19 @@ namespace is{
 	View* View_list::view_at(Point p){
 		Rect f = frame();
 		Rect vf(f.p.x+list_width, f.p.y, f.s.w-list_width, f.s.h);
-		Point cp(p.x-f.p.x, p.y-f.p.y);
-		if (vf.in_side(cp)){
+		if (vf.in_side(p)){
 			size_t ct = 0;
 			View* v= list_begin;
 			while(v && ct != active_view_count){
 				if (v->is_visible()){
-					if (v->frame().in_side(cp))
-						return v->view_at(p);
+					if (v->frame().in_side(p))
+						return v;
 					ct ++;
 				}
 				v= v->next_list_element();
 			}
 		}
-		return this;
+		return NULL;
 	}
 
 
@@ -289,17 +353,18 @@ namespace is{
 		~View_select_tracker(){ };
 
 		void mouse_down(Core *c, Event *e){
+			target->mark_as_visible();
 			begin = target->slot_at(e);
 			end = begin;
-			target->set_tmp_visible(begin, end);
+			target->mark(begin, end);
 		}
 		void mouse_drag(Core *c, Event *e){
-			target->reset_tmp_visible(begin, end);
+			target->unmark(begin, end);
 			end = target->slot_at(e);
-			target->set_tmp_visible(begin, end);
+			target->mark(begin, end);
 		}
 		void mouse_up(Core *c, Event *e){
-			target->reset_tmp_visible(begin, end);
+			target->unmark(begin, end);
 			target->set_visible(begin, end);
 		}
 	};
@@ -314,18 +379,31 @@ namespace is{
 		~View_deselect_tracker(){ };
 
 		void mouse_down(Core *c, Event *e){
+			target->mark_as_invisible();
 			begin = target->slot_at(e);
 			end = begin;
+			target->mark(begin, end);
 		}
 		void mouse_drag(Core *c, Event *e){
+			target->unmark(begin, end);
 			end = target->slot_at(e);
+			target->mark(begin, end);
 		}
 		void mouse_up(Core *c, Event *e){
+			target->unmark(begin, end);
 			target->reset_visible(begin, end);
 		}
 	};
 	Mouse_event_tracker* 
 		View_list::begin_mouse_event(Core *c, Event *e, uint8_t button_id){
+
+		View* cv = view_at(e->cursor());
+		if (cv) return cv->begin_mouse_event(c, e, button_id);
+
+		Rect f = frame();
+		Rect lf(f.p.x, f.p.y, list_width, f.s.h);
+		if (not lf.in_side(e->cursor())) return NULL;
+
 		View* v = view_at_slot(slot_at(e));
 		if (button_id == 0 && v && not v->is_visible()){
 			return new View_select_tracker(this);
@@ -337,12 +415,44 @@ namespace is{
 			v->_is_visible = !v->_is_visible;
 		return NULL;
 	}
+
 	void View_list::key_down(Core *c, Event *e, uint8_t key_name){
 		if (key_name == 'a'){
 			select_all();
+			return;
 		}
 		if (key_name == 'A'){
 			deselect_all();
+			return;
 		}
+
+		int32_t amount = 64;
+		if (key_name == 'N'){
+			scroll_all(c, e, amount, 0, 0);
+			return;
+		}
+		if (key_name == 'H'){
+			scroll_all(c, e, -amount, 0, 0);
+			return;
+		}
+		if (key_name == 'C'){
+			scroll_all(c, e, 0, amount, 0);
+			return;
+		}
+		if (key_name == 'T'){
+			scroll_all(c, e, 0, -amount, 0);
+			return;
+		}
+		if (key_name == 'l'){
+			layouter = new Virtical_layouter_v1;
+			return;
+		}
+		if (key_name == 's'){
+			layouter = new Horizontial_layouter_v1;
+			return;
+		}
+
+		View* v = view_at(e->cursor());
+		if (v) v->key_down(c, e, key_name);
 	}
 }

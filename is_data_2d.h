@@ -132,6 +132,13 @@ namespace is{
 			Size is = _data->image_size();
 			return is.h+header_size;
 		}
+        size_t min_w(){
+			return 100;
+		}
+		size_t max_w(){
+			Size is = _data->image_size();
+			return is.w;
+		}
 
         void update_image(Core *c, Size s) const{
 			Size is = _data->image_size();
@@ -255,6 +262,10 @@ namespace is{
 			}
 		}
 		void mouse_move(Core *c, Event* e){
+			Rect f = frame();
+			if (not f.in_side(e->cursor()))
+				return;
+
 			Point p = cursor_in_view_coord(e);
 			std::string &s_name_x = _scale_name_x;
 			std::string &s_name_y = _scale_name_y;
@@ -286,8 +297,37 @@ namespace is{
 			if (is.h<f.s.h)
 				idx_start_y = 0;
 
+			mouse_move(c, e);
+
 		}
 	};
+	
+	View_1d<double>* histgram_of(Core* c, uint8_t *d, Image_info *i){
+		int histgram[256];
+		for (int i=  0; i< 256; i++)
+			histgram[i] = 0;
+
+		for (size_t y = 0; y<i->h; y++){
+			const uint8_t *row_adr = d+y*i->bytes_per_row;
+			for (size_t x = 0; x<i->w; x++){
+				const uint8_t *pixel_adr = 
+					row_adr+x*i->bytes_per_pixel;
+				for (size_t ch = 0; ch<i->channel; ch++){
+					 histgram[pixel_adr[ch]]++;
+				}
+			}
+		}
+
+		double histgram_d[256];
+		double sum = 0;
+		for (int i=  0; i< 256; i++){
+			sum += histgram[i];
+			histgram_d[i] = sum;
+
+			//histgram_d[i] = histgram[i];
+		}
+		return new is::View_1d<double>(c, histgram_d, 256);
+	}
 
 	//inline View* Data_2d::default_view(){
 	//	return new View_2d;

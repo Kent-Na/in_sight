@@ -170,6 +170,10 @@ namespace is{
 		}
 
 		void mouse_move(Core* c, Event* e){
+			Rect f = frame();
+			if (not f.in_side(e->cursor()))
+				return;
+
 			Point p = cursor_in_view_coord(e);
 			std::string s_name = _scale_name;
 			c->set_scale(s_name, idx_start+p.x);
@@ -188,6 +192,7 @@ namespace is{
 				else
 					idx_start = _data->size()-f.s.w;
 			}
+			mouse_move(c, e);
 		}
 	};
 

@@ -10,4 +10,7 @@ namespace is{
 		Window(Core *c);
 		~Window();
 	};
+
+	void init(int argc, char** argv);
+	void run();
 }}

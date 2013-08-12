@@ -95,4 +95,74 @@ namespace is{
 		}
 		return visible_count;
 	}
+
+	size_t Horizontial_layouter_v1::layout(Rect r, std::vector<View*> vs){
+		Size s = r.s;
+		size_t sum_min_w = 0.0;
+		size_t visible_count = 0;
+
+		for (size_t i=0; i<vs.size(); i++){
+			size_t next_sum = sum_min_w + vs[i]->min_w();
+			if (next_sum>s.w)
+				break;
+			sum_min_w = next_sum;
+			visible_count = i+1;
+		}
+
+		struct View_info{
+			View* v;
+			size_t idx;
+			size_t w;
+			bool maxed;
+		} info[visible_count];
+
+		size_t remain = s.w;
+
+		for (size_t i=0; i<visible_count; i++){
+			info[i].idx = i;
+			info[i].v = vs[i];
+			info[i].w = vs[i]->min_w();
+			info[i].maxed = false;
+			remain -= info[i].w;
+		}
+			
+		auto comp_info_max = [](View_info l, View_info r)->bool{
+			return l.v->max_w()<r.v->max_w();
+		};
+
+		std::sort(info, info+visible_count, comp_info_max);
+
+		for (size_t i=0; i<visible_count; i++){
+			size_t uncalculated_count = visible_count-i; 
+			double remain_par_view = remain/(double)uncalculated_count;
+			
+			size_t new_w = info[i].w + remain_par_view;
+			size_t max_w = info[i].v->max_w();
+			if (max_w<new_w){
+				remain -= max_w-info[i].w;
+				info[i].w = max_w;
+			}
+			else{
+				remain -= new_w-info[i].w;
+				info[i].w = new_w;
+			}
+		}
+
+		auto comp_info_idx = [](View_info l, View_info r)->bool{
+			return l.idx<r.idx;
+		};
+		
+		std::sort(info, info+visible_count, comp_info_idx);
+		size_t v_pos = 0;
+		for (size_t i=0; i<visible_count; i++){
+			Rect f;
+			f.p.y = r.p.y;
+			f.s.h = s.h;
+			f.p.x = r.p.x+v_pos;
+			f.s.w = info[i].w;
+			info[i].v->frame(f);
+			v_pos += info[i].w;
+		}
+		return visible_count;
+	}
 }

@@ -14,4 +14,8 @@ namespace is{
 		size_t layout(Rect r, std::vector<View*> vs);
 	};
 
+	class Horizontial_layouter_v1:public  Layouter{
+		size_t layout(Rect r, std::vector<View*> vs);
+	};
+
 }

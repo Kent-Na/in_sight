@@ -86,9 +86,7 @@ namespace is{
 	}
 
 	View* Window::view_at(Point p){
-		if (root_view)
-			return root_view->view_at(p);
-		return NULL;
+		return root_view;
 	}
 
 	void Window::mouse_down(Size s, Point p, uint8_t button_id){
@@ -147,7 +145,7 @@ namespace is{
 		View* target_view = view_at(event->cursor());
 		if (!target_view) return;
 	
-		int32_t amount = 32;
+		int32_t amount = 64;
 
 		if (key == 'n'){
 			target_view->scroll(core, event, amount, 0, 0);

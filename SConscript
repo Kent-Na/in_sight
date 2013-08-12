@@ -4,13 +4,14 @@ Import('env')
 mainFiles = [
 	'is_core.cpp',
 	'is_glut.cpp',
+	'is_cocoa.mm',
 	'is_texture.cpp',
 	'is_graphics.cpp',
 	'is_view.cpp',
 	'is_layouter.cpp',
 ]
 
-main = ['basic_test.cpp']
+main = ['cocoa_test.cpp']
 main.extend(mainFiles)
 
 env.Program(target = 'main', source = main)
@@ -25,10 +26,10 @@ env.Program(target = 'main', source = main)
 
 #env.Program(target = 'static_cc', source = main)
 
-main = ['simple_2d_test.cpp']
-main.extend(mainFiles)
+#main = ['simple_2d_test.cpp']
+#main.extend(mainFiles)
 
-env.Program(target = '2d_test', source = main)
+#env.Program(target = '2d_test', source = main)
 
 #main = ['simple_test.cpp']
 #main.extend(mainFiles)
@@ -40,4 +41,4 @@ env.Program(target = '2d_test', source = main)
 
 #env.Program(target = 'anti', source = main)
 
-#env.Library(target = 'in_sight', source = mainFiles);
+env.Library(target = 'in_sight', source = mainFiles);

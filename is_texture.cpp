@@ -23,6 +23,18 @@ namespace is{
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0,
+				GL_LUMINANCE, GL_UNSIGNED_BYTE, img);
+		return tex;
+	}
+
+	GLuint texture_from_alpha(uint8_t *img, size_t w, size_t h){
+		GLuint tex = 0;	
+		glGenTextures(1, &tex);
+
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, w, h, 0,
 				GL_ALPHA, GL_UNSIGNED_BYTE, img);
 		return tex;
@@ -138,7 +150,7 @@ namespace is{
 			itr++;
 		}
 
-		GLuint tex = texture_from_grayscale(out_bitmap, s.w, s.h);
+		GLuint tex = texture_from_alpha(out_bitmap, s.w, s.h);
 		free(out_bitmap);
 		return tex;
 	}
@@ -219,7 +231,7 @@ namespace is{
         CTLineRef ln = makeLineFrom(s, text);
 		CTLineDraw(ln, ctx);
 
-		GLuint tex = texture_from_grayscale(out_bitmap, s.w, s.h);
+		GLuint tex = texture_from_alpha(out_bitmap, s.w, s.h);
 
 		CGContextRelease(ctx);
 
