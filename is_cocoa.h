@@ -1,4 +1,5 @@
 
+#ifdef __APPLE__
 
 namespace is{
 	namespace cocoa{
@@ -14,3 +15,5 @@ namespace is{
 	void init(int argc, char** argv);
 	void run();
 }}
+
+#endif //__APPLE__

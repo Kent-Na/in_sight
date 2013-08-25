@@ -237,11 +237,13 @@ namespace is{
 	}
 
 	bool View_list::is_visible(View* v){
-		bool cond0 = mark_type == 1 && 
+		bool cond0 = mark_type == 0 && 
+			(v->is_visible());
+		bool cond1 = mark_type == 1 && 
 			(v->is_visible() || v->is_marked());
-		bool cond1 = mark_type == 2 && 
+		bool cond2 = mark_type == 2 && 
 			(v->is_visible() && ! v->is_marked());
-		return cond0 || cond1;
+		return cond0 || cond1 || cond2;
 	}
 
 	void View_list::layout(){
@@ -288,7 +290,7 @@ namespace is{
 		recalculate_list_begin();
 
 		//clear background
-		color::light_background();
+		color::background();
 		draw_rect(f.p.x, f.p.y, list_width, f.s.h);
 
 		//draw elements
@@ -305,22 +307,20 @@ namespace is{
 		Rect f = frame();
 
 		const size_t text_size = slot_height;
+		const size_t mark_width = 8;
 
 		Text_texture *tex_gen = shared_text_texture();
-		Size ts(list_width, text_size);
+		Size ts(list_width-mark_width, text_size);
 
 		GLuint tex = tex_gen->generate(ts, v->name().c_str());
 
 		if (is_visible(v)){
-			color::light_hilight();
-			draw_texture(0, 0, slot_idx*text_size, ts.w, ts.h);
-			color::light_text();
-			draw_texture(tex, 0, slot_idx*text_size, ts.w, ts.h);
+			color::hilight();
+			draw_texture(0, 0, slot_idx*text_size+1, mark_width, ts.h-2);
 		}
-		else{
-			color::light_text();
-			draw_texture(tex, 0, slot_idx*text_size, ts.w, ts.h);
-		}
+
+		color::text();
+		draw_texture(tex, mark_width, slot_idx*text_size, ts.w, ts.h);
 
 		glDeleteTextures(1,&tex);
 	}

@@ -1,15 +1,17 @@
-namespace is{
-	class Data;
-	class View_2d;
 
-	void capture_image(uint8_t *in, Image_info *input_info,
-					   uint8_t *out, Size size){
-		uint8_t *itr = out;
+namespace is{
+	using namespace is;
+
+	template <typename T = uint8_t>
+	void capture_image(T *in, Image_info *input_info,
+					   T *out){
+		T *itr = out;
 		for (size_t y = 0; y<input_info->h; y++){
-			const uint8_t *row_adr = in+y*input_info->bytes_per_row;
+			const uint8_t *row_adr = 
+				(uint8_t*)in+y*input_info->bytes_per_row;
 			for (size_t x = 0; x<input_info->w; x++){
-				const uint8_t *pixel_adr = 
-					row_adr+x*input_info->bytes_per_pixel;
+				const T *pixel_adr = 
+					(T*)(row_adr+x*input_info->bytes_per_pixel);
 				for (size_t ch = 0; ch<input_info->channel; ch++){
 					*(itr++) = pixel_adr[ch];
 				}
@@ -33,62 +35,200 @@ namespace is{
 		}
 	}
 
-	class Data_2d_tile{
-		uint8_t *img_data;
-		GLuint texture;
-		size_t w;
-		size_t h;
-
-		public:
-		void load_texture();
-		void unload_texture();
-		void draw(
-				size_t src_x, size_t src_y, size_t src_w, size_t src_h,
-				size_t dst_x, size_t dst_y, size_t dst_w, size_t dst_h);
-	};
-
+	template<typename T = uint8_t>
 	class Data_2d: public Data{
-		uint8_t *data;
-		Image_info info;
+		T* _data;
+		Image_info _info;
 
     public:
-		GLuint tex;
-		Data_2d(uint8_t *d, Image_info *i){
-			const size_t data_size = i->w*i->h*i->channel;
-			data = (uint8_t*)malloc(data_size);
-			capture_image(d, i, data, Size(i->w, i->h));
-			tex = 0;
-			this->info = *i;
+
+		Data_2d(T *d, Image_info *i){
+			const size_t data_size = i->w*i->h*i->channel*sizeof(*d);
+			_data = (T*)malloc(data_size);
+			capture_image(d, i, _data);
+			this->_info = *i;
+			_info.bytes_per_row   = _info.w*_info.channel*sizeof(T);
+			_info.bytes_per_pixel = _info.channel*sizeof(T);
 		}
 		~Data_2d(){
 			free(data);
-			if (tex)
-				glDeleteTextures(1, &tex);
-		}
-
-		void rebuild_texture(){
-			if (tex)
-				glDeleteTextures(1, &tex);
-			if (info.channel == 1)
-				tex = texture_from_grayscale(data, info.w, info.h);
-			else if (info.channel == 3)
-				tex = texture_from_rgb(data, info.w, info.h);
 		}
 
 		Size image_size() const{
-			return Size(info.w, info.h);
+			return Size(_info.w, _info.h);
+		}
+		T* data() const{
+			return _data;
+		}
+		T min() const{
+			T min = *_data;
+			uint8_t *in = (uint8_t*)_data;
+			for (int y= 0; y<_info.h; y++){
+				uint8_t *row_in = in+_info.bytes_per_row*y;
+				for (int x= 0; x<_info.w; x++){
+					uint8_t *pixel_in = 
+						row_in+_info.bytes_per_pixel*x;
+					for (int i = 0; i<_info.channel; i++){
+						auto &v = ((T*)pixel_in)[i];
+						if (v<min) min = v;
+					}
+				}
+			}
+			return min;
+		}
+		T max() const{
+			T max = *_data;
+			uint8_t *in = (uint8_t*)_data;
+			for (int y= 0; y<_info.h; y++){
+				uint8_t *row_in = in+_info.bytes_per_row*y;
+				for (int x= 0; x<_info.w; x++){
+					uint8_t *pixel_in = 
+						row_in+_info.bytes_per_pixel*x;
+					for (int i = 0; i<_info.channel; i++){
+						auto &v = ((T*)pixel_in)[i];
+						if (v>max) max = v;
+					}
+				}
+			}
+			return max;
+		}
+		T value_at(size_t x, size_t y, size_t ch){
+			const auto &i = _info;
+			uint8_t* ptr = (uint8_t*)_data;
+			ptr += i.bytes_per_row    *y;
+			ptr += i.bytes_per_pixel  *x;
+			return ((T*)ptr)[ch];
+		}
+		const Image_info& info() const{
+			return _info;
+		}
+	};
+
+	class Data_2d_tile{
+		GLuint texture;
+		size_t w;
+		size_t h;
+		size_t ch;
+
+		public:
+		static constexpr size_t max_tile_size = 512;
+
+		Data_2d_tile(){
+			texture = 0;
+		}
+		~Data_2d_tile(){
+			unload_texture();
+		}
+		void load_texture(uint8_t* img_data){
+			if (texture)
+				unload_texture();
+			if (ch == 1)
+				texture = texture_from_grayscale(img_data, w, h);
+			else if (ch == 3)
+				texture = texture_from_rgb(img_data, w, h);
+		}
+		void unload_texture(){
+			if (texture)
+				glDeleteTextures(1, &texture);
+			texture = 0;
+		}
+		void draw(
+				size_t src_x, size_t src_y, size_t src_w, size_t src_h,
+				size_t dst_x, size_t dst_y, size_t dst_w, size_t dst_h){
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glBegin(GL_TRIANGLE_STRIP);
+            glTexCoord2f  ((src_x      )/(float)w, (src_y      )/(float)h);	
+			glVertex2f   (dst_x,       dst_y      );
+            glTexCoord2f  ((src_x+src_w)/(float)w, (src_y      )/(float)h);	
+			glVertex2f   (dst_x+dst_w, dst_y      );
+            glTexCoord2f  ((src_x      )/(float)w, (src_y+src_h)/(float)h);	
+			glVertex2f   (dst_x,       dst_y+dst_h);
+            glTexCoord2f  ((src_x+src_w)/(float)w, (src_y+src_h)/(float)h);	
+			glVertex2f   (dst_x+dst_w, dst_y+dst_h);
+            glEnd();
 		}
 
+		bool inited(){
+			return texture != 0;
+		}
+
+		template<typename T>
+		void init_with(Data_2d<T> *data, size_t tx, size_t ty,
+				Color_map c_map, T m_min, T m_max){
+			const Image_info &i_info = data->info();
+			const size_t t_size = Data_2d_tile::max_tile_size;
+			size_t w  = std::min(i_info.w-tx*t_size, t_size);
+			size_t h  = std::min(i_info.h-ty*t_size, t_size);
+			size_t ch = i_info.channel;
+
+			uint8_t *img_data = (uint8_t*)malloc(w*h*ch);
+			this->w = w;
+			this->h = h;
+			this->ch = ch;
+
+			uint8_t *in = (uint8_t*)data->data();
+			uint8_t *out = img_data;
+			uint8_t *out_itr = out;
+
+			if (c_map == Color_map::direct){
+				for (int y= 0; y<h; y++){
+					uint8_t *row_in = in+i_info.bytes_per_row*(y+ty*t_size);
+					for (int x= 0; x<w; x++){
+						uint8_t *pixel_in = 
+							row_in+i_info.bytes_per_pixel*(x+tx*t_size);
+						for (int i = 0; i<ch; i++){
+							*(out_itr++) = ((T*)pixel_in)[i];
+						}
+					}
+				}
+			}
+			else{
+				float s = 255.0f/(m_max-m_min);
+				for (int y= 0; y<h; y++){
+					uint8_t *row_in = in+i_info.bytes_per_row*(y+ty*t_size);
+					for (int x= 0; x<w; x++){
+						uint8_t *pixel_in = 
+							row_in+i_info.bytes_per_pixel*(x+tx*t_size);
+						for (int i = 0; i<ch; i++){
+							auto v = ((T*)pixel_in)[i];
+							*(out_itr++) = (v-m_min)*s;
+						}
+					}
+				}
+			}
+			load_texture(img_data);
+			free(img_data);
+		}
 
 	};
 
+	struct Tile_2d_loc{
+		size_t x;
+		size_t y;
+		
+		Tile_2d_loc(){}
+		Tile_2d_loc(size_t x, size_t y):x(x), y(y){}
+	};
+
+	inline bool operator < (const Tile_2d_loc &l,const Tile_2d_loc &r){
+		if (l.x != r.x)
+			return l.x<r.x;
+		return l.y<r.y;
+	}
+
+	template<typename T = uint8_t>
 	class View_2d:public View{
         size_t idx_start_x;
         size_t idx_start_y;
 	protected:
 		std::string _scale_name_x;
 		std::string _scale_name_y;
-		Data_2d* _data;
+		Data_2d<T>* _data;
+		std::map<Tile_2d_loc, Data_2d_tile> tiles;
+
+		Color_map _color_map;
+		T _map_min;
+		T _map_max;
     public:
 		
 		void init(){
@@ -96,10 +236,11 @@ namespace is{
             idx_start_y = 0;
 			_scale_name_x = "x";
 			_scale_name_y = "y";
+			_color_map = Color_map::invalid;
 		}
 
-        View_2d(Core* c, uint8_t *d, Image_info *i){
-			_data = new Data_2d(d, i);
+        View_2d(Core* c, T* d, Image_info *i){
+			_data = new Data_2d<T>(d, i);
 			init();
 			c->add(this);
         }
@@ -118,6 +259,38 @@ namespace is{
 		}
 		std::string scale_name_y() const{
 			return _scale_name_y;
+		}
+
+		View_2d* color_map(Color_map method, T min, T max){
+			_map_min = min;
+			_map_max = max;
+			_color_map = method;
+			
+			T max_value = _data->max();
+			T min_value = _data->min();
+
+			if (method == Color_map::min_to_max){
+				_map_min = min_value;
+				_map_max = max_value;
+			}
+			if (method == Color_map::zero_to_max){
+				_map_min = 0;
+				_map_max = max_value;
+			}
+			if (method == Color_map::min_to_zero){
+				_map_min = min_value;
+				_map_max = 0;
+			}
+			if (method == Color_map::balanced){
+				T s = std::max<T>(fabs(min_value),max_value);
+				_map_min = -s;
+				_map_max = s;
+			}
+			if (method == Color_map::direct){
+				_map_min = 0;
+				_map_max = 255;
+			}
+			return this;
 		}
 
 		Data* data() const{
@@ -140,29 +313,52 @@ namespace is{
 			return is.w;
 		}
 
-        void update_image(Core *c, Size s) const{
+        void update_image(Core *c, Size s){
 			Size is = _data->image_size();
 			Size vs(std::min(s.w,is.w),std::min(s.h,is.h));
             
 			glColor4d(1,1,1,1);
-			if (not _data->tex)
-				_data->rebuild_texture();
 
-            float tx_min = idx_start_x/(float)is.w;
-            float ty_min = idx_start_y/(float)is.h;
-            float tx_max = (idx_start_x+vs.w)/(float)is.w;
-            float ty_max = (idx_start_y+vs.h)/(float)is.h;
+            const int ix_min = idx_start_x;
+            const int iy_min = idx_start_y;
+            const int ix_max = idx_start_x+vs.w;
+            const int iy_max = idx_start_y+vs.h;
 
-            glBindTexture(GL_TEXTURE_2D, _data->tex);
-            glBegin(GL_TRIANGLE_FAN);
-            glTexCoord2f(tx_min,ty_min);	glVertex2f(0,0);
-            glTexCoord2f(tx_min,ty_max);	glVertex2f(0,vs.h);
-            glTexCoord2f(tx_max,ty_max);	glVertex2f(vs.w,vs.h);
-            glTexCoord2f(tx_max,ty_min);	glVertex2f(vs.w,0);
-            glEnd();
+			const int t_size = Data_2d_tile::max_tile_size;
 
-			//draw_texture(data->tex, -(double)idx_start_x, -(double)idx_start_y, is.w, is.h);
-			//draw_texture(0, 0, 0, 100, 100);
+			const int tx_min = ix_min/t_size;
+			const int tx_max = ix_max/t_size+1;
+			const int ty_min = iy_min/t_size;
+			const int ty_max = iy_max/t_size+1;
+
+			for (int tx = tx_min; tx<tx_max; tx++){
+				for (int ty = ty_min; ty<ty_max; ty++){
+					Tile_2d_loc loc(tx, ty);
+					auto &tile = tiles[loc];
+					if (not tile.inited()){
+						if (_color_map == Color_map::invalid){
+							color_map(Color_map::direct,0,0);
+						}
+						tile.template init_with<T>(
+								_data, tx, ty,
+								_color_map, _map_min, _map_max);
+					}
+					using std::max;
+					using std::min;
+					const int lx_min = max(ix_min-tx*t_size, 0);
+					const int lx_max = min(ix_max-tx*t_size, t_size);
+					const int ly_min = max(iy_min-ty*t_size, 0);
+					const int ly_max = min(iy_max-ty*t_size, t_size);
+
+					const int w = lx_max-lx_min;
+					const int h = ly_max-ly_min;
+					tile.draw(
+							lx_min, ly_min, w, h,
+							lx_min+tx*t_size-ix_min, 
+							ly_min+ty*t_size-iy_min, 
+							w, h);
+				}
+			}
         }
 		void update_forcus(Core *c, Size s){
             const size_t header_size = 14;
@@ -193,14 +389,11 @@ namespace is{
                 glVertex2d(forcused_idx_vx+g_delta*i,vs.h);
             }
 			glEnd();
-
 		}
 
 		void update(Core *c){
             const size_t header_size = 14;
 			Rect f = frame();
-
-			//draw_texture(data->tex, -(double)idx_start_x, -(double)idx_start_y, is.w, is.h);
 
 			glPushMatrix();
 			glTranslated(f.p.x, f.p.y, 0);
@@ -213,28 +406,36 @@ namespace is{
 			update_header(c, f.s);
             update_seek_bar(c, Size(f.s.w, f.s.h-header_size));
 			glPopMatrix();
-			//draw_texture(0, 0, 0, 100, 100);
 		}
 		void update_header(Core *c, Size s) const{
-
-			//const size_t header_size = 14;
+			Size is = _data->image_size();
+			Size vs(std::min(s.w,is.w),std::min(s.h,is.h));
+			Size is_end(idx_start_x+vs.w, idx_start_y+vs.h);
 			std::stringstream s_s;
 
+			const auto& name = _data->name();
 			const std::string &s_name_x = _scale_name_x;
 			const std::string &s_name_y = _scale_name_y;
 			size_t forcused_idx_x = c->get_scale(s_name_x);
 			size_t forcused_idx_y = c->get_scale(s_name_y);
 
-			s_s << s_name_x << "," << s_name_y <<
-				"[" << forcused_idx_x << "," <<
-				 forcused_idx_y << "] = xxx" <<
-            idx_start_x << "," << idx_start_y;
-			/*
-			if (forcused_idx >= idx_start && forcused_idx < idx_end(s)){
-				const double value = (*data)[forcused_idx];
+			s_s << name
+				<< "[" << s_name_x << ":" << forcused_idx_x
+				<< "," << s_name_y << ":" << forcused_idx_y
+				<< "] = ";
+
+			if (forcused_idx_x < is.w && forcused_idx_y < is.h){
+				const double value = _data->value_at(
+						forcused_idx_x, forcused_idx_y, 0);
 				s_s << value;
 			}
-			*/
+			else{
+				s_s << "OOB";
+			}
+
+            s_s << "{" << idx_start_x << "-" << is_end.w 
+				<< "," << idx_start_y << "-" << is_end.h
+				<< "}";
 
 			std::string str = s_s.str();
 			Text_texture *tex_gen = shared_text_texture();
@@ -301,7 +502,7 @@ namespace is{
 
 		}
 	};
-	
+
 	View_1d<double>* histgram_of(Core* c, uint8_t *d, Image_info *i){
 		int histgram[256];
 		for (int i=  0; i< 256; i++)
@@ -329,7 +530,4 @@ namespace is{
 		return new is::View_1d<double>(c, histgram_d, 256);
 	}
 
-	//inline View* Data_2d::default_view(){
-	//	return new View_2d;
-	//}
 }

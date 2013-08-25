@@ -132,6 +132,72 @@ namespace is{
 			this->bytes_per_row = w*3;
 			this->bytes_per_pixel = 3;
 		}
+
+		void init_as_double_grayscale(size_t w, size_t h){
+			this->w = w;
+			this->h = h;
+			this->channel = 1;
+			this->bytes_per_row = w*sizeof(double);
+			this->bytes_per_pixel = sizeof(double);
+		}
+		void init_as_double_rgb(size_t w, size_t h){
+			this->w = w;
+			this->h = h;
+			this->channel = 3;
+			this->bytes_per_row = w*sizeof(double)*3;
+			this->bytes_per_pixel = sizeof(double)*3;
+		}
+
+		template <typename T> 
+		static Image_info grayscale(size_t w, size_t h){
+			Image_info out;
+			out.w = w;
+			out.h = h;
+			out.channel = 1;
+			out.bytes_per_row = w*sizeof(T);
+			out.bytes_per_pixel = sizeof(T);
+			return out;
+		}
+
+		template <typename T> 
+		static Image_info rgb(size_t w, size_t h){
+			Image_info out;
+			out.w = w;
+			out.h = h;
+			out.channel = 3;
+			out.bytes_per_row = 3*w*sizeof(T);
+			out.bytes_per_pixel = 3*sizeof(T);
+			return out;
+		}
+
 	};
 
+	enum struct Color_map{
+		//
+		//val_max = max(data)
+		//val_min = min(data)
+		
+		//map (val_min, val_max)
+		min_to_max,
+
+		//map (0, val_max)
+		zero_to_max,
+		
+		//map (val_min, 0)
+		min_to_zero,
+
+		//map (-s,+s)
+		//where s = max(abs(val_min),val_max)
+		balanced,
+
+		//map (a, b)
+		//where a and b is user defined value.
+		custom,
+
+		//map (0, 255)
+		direct,
+
+		//For internal. Don't use this.
+		invalid,
+	};
 }

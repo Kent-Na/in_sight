@@ -1,3 +1,5 @@
+#ifdef __APPLE__
+
 #include <Cocoa/Cocoa.h>
 #include "is_config.h"
 #include "is_pch.h"
@@ -154,8 +156,9 @@
 @end
 
 @implementation IsCocoaApplicationDelegate 
-- (void)applicationDidFinishLaunching:(NSNotification *)aNotification{
-	printf("test\n");
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:
+		(NSApplication *)theApplication{
+	return YES;
 }
 @end
 
@@ -229,6 +232,7 @@ namespace is{
 			keyEquivalent:@"q"] autorelease];
 		[appMenu addItem:quitMenuItem];
 		[appMenuItem setSubmenu:appMenu];
+		[NSApp setDelegate:[[IsCocoaApplicationDelegate alloc]init]];
 		//[pool release];
 	}
 	void run(){
@@ -236,3 +240,5 @@ namespace is{
 		[NSApp run];
 	}
 }}
+
+#endif //__APPLE__

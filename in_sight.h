@@ -1,4 +1,3 @@
-
 #include "is_config.h"
 #include "is_pch.h"
 #include "is_color.h"
@@ -12,11 +11,6 @@
 #include "is_data_1d.h"
 #include "is_data_2d.h"
 
-
-#ifdef IS_USE_GLUT
 #include "is_glut.h"
-#endif
-
-#ifdef IS_USE_COCOA
 #include "is_cocoa.h"
-#endif
+#include "is_native.h"

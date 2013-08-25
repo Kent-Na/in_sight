@@ -148,8 +148,11 @@ namespace is{
 				const double value = (*_data)[forcused_idx];
 				s_s << value;
 			}
+			else{
+				s_s << "OOB";
+			}
 			
-			s_s << " [" << idx_start << ":" << idx_end(s) << "]";
+			s_s << " {" << idx_start << "-" << idx_end(s) << "}";
 
 			std::string str = s_s.str();
 			Text_texture *tex_gen = shared_text_texture();
@@ -200,12 +203,10 @@ namespace is{
 	class View_1d_bar_graph:public View_1d_graph_base<T>{
 		public:
 
-		static Class_object<View, View_1d_bar_graph<T>> klass;
-
 		View_1d_bar_graph(Core *c, std::vector<T> d):
-			View_1d_graph_base<>(c, d) { return; }
+			View_1d_graph_base<T>(c, d) { return; }
 		View_1d_bar_graph(Core *c, T* d, size_t len):
-			View_1d_graph_base<>(c, d, len) { return; }
+			View_1d_graph_base<T>(c, d, len) { return; }
 
 		void update_data(Core *c,Size s) const{
 			glTranslated(0.5,0,0);
@@ -270,14 +271,10 @@ namespace is{
 	class View_1d_label:public View_1d_graph_base<T>{
 		public:
 
-		//static Class_object<View, View_1d_label<T>> klass;
-
-		//using View_1d_graph_base<T>::View_1d_graph_base;
-
 		View_1d_label(Core *c, std::vector<T> d):
-			View_1d_graph_base<>(c, d) { return; }
+			View_1d_graph_base<T>(c, d) { return; }
 		View_1d_label(Core *c, T* d, size_t len):
-			View_1d_graph_base<>(c, d, len) { return; }
+			View_1d_graph_base<T>(c, d, len) { return; }
 
 		size_t max_h(){
 			return 14;
@@ -299,12 +296,4 @@ namespace is{
 
 	template <typename T = double>
 	using View_1d = View_1d_bar_graph<T>;
-	/*
-	template <typename T>
-	inline View* Data_1d<T>::default_view(){
-		if (view_class())
-			return view_class()->new_instance();
-		return new View_1d_bar_graph<T>;
-	}
-	*/
 }
