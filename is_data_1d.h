@@ -56,7 +56,7 @@ namespace is{
 
 		protected:
 		std::string _scale_name;
-		size_t idx_start;
+		int32_t idx_start;
 		Data_1d<T> *_data;
 
 		public:
@@ -196,6 +196,20 @@ namespace is{
 					idx_start = _data->size()-f.s.w;
 			}
 			mouse_move(c, e);
+			e->window()->scroll_to(_scale_name, idx_start);
+		}
+		void scroll_to(Core *c, Event *e, std::string name, int32_t value){
+			Rect f = frame();
+			if (name != _scale_name)
+				return;
+			if (value>0)
+				idx_start = value;
+			if (idx_start+f.s.w > _data->size()){
+				if (_data->size()<f.s.w)
+					idx_start = 0;
+				else
+					idx_start = _data->size()-f.s.w;
+			}
 		}
 	};
 

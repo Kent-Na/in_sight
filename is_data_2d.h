@@ -218,8 +218,8 @@ namespace is{
 
 	template<typename T = uint8_t>
 	class View_2d:public View{
-        size_t idx_start_x;
-        size_t idx_start_y;
+        int32_t idx_start_x;
+        int32_t idx_start_y;
 	protected:
 		std::string _scale_name_x;
 		std::string _scale_name_y;
@@ -500,6 +500,34 @@ namespace is{
 
 			mouse_move(c, e);
 
+			e->window()->scroll_to(_scale_name_x, idx_start_x);
+			e->window()->scroll_to(_scale_name_y, idx_start_y);
+		}
+		void scroll_to(Core *c, Event *e, std::string name, int32_t value){
+			Rect f = frame();
+			Size is = _data->image_size();
+			if (name == _scale_name_x){
+				idx_start_x = value;
+				if (idx_start_x < 0)
+					idx_start_x = 0;
+				if (idx_start_x+f.s.w > is.w){
+					if (is.w<f.s.w)
+						idx_start_x = 0;
+					else
+						idx_start_x = is.w-f.s.w;
+				}
+			}
+			if (name == _scale_name_y){
+				idx_start_y = value;
+				if (idx_start_y < 0)
+					idx_start_y = 0;
+				if (idx_start_y+f.s.h > is.h){
+					if (is.h<f.s.h)
+						idx_start_y = 0;
+					else
+						idx_start_x = is.h-f.s.h;
+				}
+			}
 		}
 	};
 

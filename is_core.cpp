@@ -38,7 +38,7 @@ namespace is{
 	}
 
 	Window::Window(Core* c):core(c){
-		event = new Event;
+		event = (new Event)->window(this);
 		root_view = c->default_view;
 		c->main_window = this;
 		c->default_view = NULL;
@@ -162,6 +162,12 @@ namespace is{
 	}
 	void Window::key_up(Size s, uint8_t key){
 
+	}
+
+	////
+	//extra events
+	void Window::scroll_to(std::string name, int32_t location){
+		root_view->scroll_to(core, event, name, location);
 	}
 }
 

@@ -59,6 +59,11 @@ namespace is{
 		View* v = view_at(e->cursor());
 		if (v) v->scroll(c, e, dx, dy, dz);
 	}
+	void View::scroll_to(Core *c, Event *e, 
+				      std::string name, int32_t location){
+		View* v = view_at(e->cursor());
+		if (v) v->scroll_to(c, e, name, location);
+	}
 	void View::key_down(Core *c, Event *e, uint8_t key_name){
 		View* v = view_at(e->cursor());
 		if (v) v->key_down(c, e, key_name);
@@ -129,6 +134,18 @@ namespace is{
 		while(v && ct != active_view_count){
 			if (v->is_visible()){
 				v->scroll(c, e, dx, dy, dz);
+				ct ++;
+			}
+			v= v->next_list_element();
+		}
+	}
+	void View_list::scroll_to_all
+		(Core *c, Event* e, std::string name, int32_t location){
+		size_t ct = 0;
+		View* v= list_begin;
+		while(v && ct != active_view_count){
+			if (v->is_visible()){
+				v->scroll_to(c, e, name, location);
 				ct ++;
 			}
 			v= v->next_list_element();
@@ -453,6 +470,16 @@ namespace is{
 		}
 
 		View* v = view_at(e->cursor());
-		if (v) v->key_down(c, e, key_name);
+		if (not v) return;
+
+		if (key_name == 'x'){
+			v->reset_visible();
+			return;
+		}
+		v->key_down(c, e, key_name);
+	}
+	void View_list::scroll_to(Core *c, Event *e, 
+				      std::string name, int32_t location){
+		scroll_to_all(c, e, name, location);
 	}
 }

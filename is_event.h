@@ -27,6 +27,11 @@ namespace is{
 
 		void cursor(Point p){ _cursor_location = p; }
 		Point cursor() const{ return _cursor_location; }
+		Event* window(Window* w){ 
+			_window = w;
+			return this;
+		};
+		Window* window(){ return _window; };
 	};
 
 	class Event_responder{
@@ -36,6 +41,8 @@ namespace is{
 		virtual void move_cursor(Core *c, Event *e);
 		virtual void scroll(Core *c, Event *e,
 				int32_t dx, int32_t dy, int32_t dz);
+		virtual void scroll_to(Core *c, Event *e,
+				std::string name, int32_t location);
 		virtual void pless_key(Core *c, Event *e,
 				uint8_t key_name);
 

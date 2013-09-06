@@ -119,7 +119,7 @@
     is::Point p = {(size_t)pp.x, (size_t)pp.y};
     const double scale = 10.0;
     [self is_window]->wheel_move(s, p,
-                                 [theEvent deltaX]*scale,
+                                 -[theEvent deltaX]*scale,
                                  [theEvent deltaY]*scale);
     [self is_window]->update(s);
     //system->triggerMouseDown([theEvent buttonNumber]);

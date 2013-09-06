@@ -40,6 +40,9 @@ namespace is{
 		virtual void 
 			scroll(Core *c, Event* e,int32_t dx, int32_t dy, int32_t dz);
 		virtual void 
+			scroll_to(Core *c, Event *e, 
+				      std::string name, int32_t location);
+		virtual void 
 			key_down(Core *c, Event *e, uint8_t key_name);
 
 		Point cursor_in_view_coord(Event *e) const;
@@ -113,6 +116,8 @@ namespace is{
 		Mouse_event_tracker* 
 			begin_mouse_event(Core *c, Event *e, uint8_t button_id);
 		void key_down(Core *c, Event *e, uint8_t key_name);
+		void scroll_to(Core *c, Event *e,
+				std::string name, int32_t location);
 		void active_view_list();
 		void add(View* v);
 
@@ -120,6 +125,8 @@ namespace is{
 		void deselect_all();
 		void scroll_all
 			(Core *c, Event* e,int32_t dx, int32_t dy, int32_t dz);
+		void scroll_to_all
+			(Core *c, Event* e, std::string name, int32_t location);
 
 		size_t list_slot_count();
 		void recalculate_list_begin();

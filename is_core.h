@@ -32,6 +32,7 @@ namespace is{
 
 		void add(View *v);
 
+		//raw UID events
 		void update(Size s);
 		void mouse_down(Size s, Point p, uint8_t button_id);
 		void mouse_drag(Size s, Point p);
@@ -40,6 +41,9 @@ namespace is{
 		void wheel_move(Size s, Point p, uint32_t dx, uint32_t dy);
 		void key_down(Size s, uint8_t key);
 		void key_up(Size s, uint8_t key);
+
+		//extra events
+		void scroll_to(std::string name, int32_t location);
 	};
 }
 
