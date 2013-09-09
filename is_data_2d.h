@@ -154,7 +154,7 @@ namespace is{
 
 		template<typename T>
 		void init_with(Data_2d<T> *data, size_t tx, size_t ty,
-				Color_map c_map, T m_min, T m_max){
+				Value_map c_map, T m_min, T m_max){
 			const Image_info &i_info = data->info();
 			const size_t t_size = Data_2d_tile::max_tile_size;
 			size_t w  = std::min(i_info.w-tx*t_size, t_size);
@@ -170,7 +170,7 @@ namespace is{
 			uint8_t *out = img_data;
 			uint8_t *out_itr = out;
 
-			if (c_map == Color_map::direct){
+			if (c_map == Value_map::direct){
 				for (int y= 0; y<h; y++){
 					uint8_t *row_in = in+i_info.bytes_per_row*(y+ty*t_size);
 					for (int x= 0; x<w; x++){
@@ -226,7 +226,7 @@ namespace is{
 		Data_2d<T>* _data;
 		std::map<Tile_2d_loc, Data_2d_tile> tiles;
 
-		Color_map _color_map;
+		Value_map _value_map;
 		T _map_min;
 		T _map_max;
     public:
@@ -236,7 +236,7 @@ namespace is{
             idx_start_y = 0;
 			_scale_name_x = "x";
 			_scale_name_y = "y";
-			_color_map = Color_map::invalid;
+			_value_map = Value_map::invalid;
 		}
 
         View_2d(Core* c, T* d, Image_info *i){
@@ -244,6 +244,12 @@ namespace is{
 			init();
 			c->add(this);
         }
+
+		View_2d* scale_name(std::string x_value, std::string y_value){
+			_scale_name_x = x_value;
+			_scale_name_y = y_value;
+			return this;
+		}
 
 		View_2d* scale_name_x(std::string value){
 			_scale_name_x = value;
@@ -261,32 +267,32 @@ namespace is{
 			return _scale_name_y;
 		}
 
-		View_2d* color_map(Color_map method, T min, T max){
+		View_2d* value_map(Value_map method, T min, T max){
 			_map_min = min;
 			_map_max = max;
-			_color_map = method;
+			_value_map = method;
 			
 			T max_value = _data->max();
 			T min_value = _data->min();
 
-			if (method == Color_map::min_to_max){
+			if (method == Value_map::min_to_max){
 				_map_min = min_value;
 				_map_max = max_value;
 			}
-			if (method == Color_map::zero_to_max){
+			if (method == Value_map::zero_to_max){
 				_map_min = 0;
 				_map_max = max_value;
 			}
-			if (method == Color_map::min_to_zero){
+			if (method == Value_map::min_to_zero){
 				_map_min = min_value;
 				_map_max = 0;
 			}
-			if (method == Color_map::balanced){
+			if (method == Value_map::balanced){
 				T s = std::max<T>(fabs(min_value),max_value);
 				_map_min = -s;
 				_map_max = s;
 			}
-			if (method == Color_map::direct){
+			if (method == Value_map::direct){
 				_map_min = 0;
 				_map_max = 255;
 			}
@@ -336,12 +342,12 @@ namespace is{
 					Tile_2d_loc loc(tx, ty);
 					auto &tile = tiles[loc];
 					if (not tile.inited()){
-						if (_color_map == Color_map::invalid){
-							color_map(Color_map::direct,0,0);
+						if (_value_map == Value_map::invalid){
+							value_map(Value_map::direct,0,0);
 						}
 						tile.template init_with<T>(
 								_data, tx, ty,
-								_color_map, _map_min, _map_max);
+								_value_map, _map_min, _map_max);
 					}
 					using std::max;
 					using std::min;
@@ -413,7 +419,8 @@ namespace is{
 			Size is_end(idx_start_x+vs.w, idx_start_y+vs.h);
 			std::stringstream s_s;
 
-			const auto& name = _data->name();
+			auto name = _data->name();
+			if (name.empty()) name = View::name();
 			const std::string &s_name_x = _scale_name_x;
 			const std::string &s_name_y = _scale_name_y;
 			size_t forcused_idx_x = c->get_scale(s_name_x);

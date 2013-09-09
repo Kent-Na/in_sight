@@ -172,7 +172,7 @@ namespace is{
 
 	};
 
-	enum struct Color_map{
+	enum struct Value_map{
 		//
 		//val_max = max(data)
 		//val_min = min(data)

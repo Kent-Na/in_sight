@@ -3,8 +3,8 @@ namespace is{
 	template <typename T = double>
 	class Data_1d:public Data{
 		std::vector<T> data;
-		T _min_value;
-		T _max_value;
+		//T _min_value;
+		//T _max_value;
 
 		public:
 
@@ -12,26 +12,28 @@ namespace is{
 
 		Data_1d(std::vector<T> d){
 			data.insert(data.begin(), d.begin(), d.end());
-			init_cache();
+			//init_cache();
 		}
 		Data_1d(T* d, size_t len){
 			data.insert(data.begin(), d, d+len);
-			init_cache();
+			//init_cache();
 		}
 
-		void init_cache(){
-			_min_value = *std::min_element(data.begin(), data.end());
-			_max_value = *std::max_element(data.begin(), data.end());
-		}
+		//void init_cache(){
+			//_min_value = *std::min_element(data.begin(), data.end());
+			//_max_value = *std::max_element(data.begin(), data.end());
+		//}
 
 		size_t size() const{
 			return data.size();
 		}
-		double min_value() const{
-			return _min_value;
+		double min() const{
+			//return _min_value;
+			return  *std::min_element(data.begin(), data.end());
 		}
-		double max_value() const{
-			return _max_value;
+		double max() const{
+			//return _max_value;
+			return *std::max_element(data.begin(), data.end());
 		}
 		double operator [] (size_t idx) const{
 			return data[idx];
@@ -52,12 +54,16 @@ namespace is{
 			_grid_interval = 0;
 			_scale_name = "x";
 			idx_start = 0;
+			value_map(Value_map::min_to_max, 0, 0);
 		}
 
 		protected:
 		std::string _scale_name;
 		int32_t idx_start;
 		Data_1d<T> *_data;
+		T _map_min;
+		T _map_max;
+		Value_map _value_map;
 
 		public:
 
@@ -84,17 +90,49 @@ namespace is{
 			return _scale_name;
 		}
 
-		View_1d_graph_base* grid_interval(size_t value){
-			_grid_interval = value;
-			return this;
-		}
-
 		Data* data() const{
 			return _data;
 		}
 
 		size_t grid_interval() const{
 			return _grid_interval;
+		}
+
+		View_1d_graph_base* grid_interval(size_t value){
+			_grid_interval = value;
+			return this;
+		}
+
+		View_1d_graph_base* value_map(Value_map method, T min, T max){
+			_map_min = min;
+			_map_max = max;
+			_value_map = method;
+			
+			T max_value = _data->max();
+			T min_value = _data->min();
+			if (method == Value_map::invalid)
+				method = Value_map::min_to_max;
+			if (method == Value_map::direct)
+				method = Value_map::min_to_max;
+
+			if (method == Value_map::min_to_max){
+				_map_min = min_value;
+				_map_max = max_value;
+			}
+			if (method == Value_map::zero_to_max){
+				_map_min = 0;
+				_map_max = max_value;
+			}
+			if (method == Value_map::min_to_zero){
+				_map_min = min_value;
+				_map_max = 0;
+			}
+			if (method == Value_map::balanced){
+				T s = std::max<T>(fabs(min_value),max_value);
+				_map_min = -s;
+				_map_max = s;
+			}
+			return this;
 		}
 
 		size_t min_h(){
@@ -226,16 +264,17 @@ namespace is{
 			glTranslated(0.5,0,0);
 			const size_t idx_end = this->idx_end(s);
 
-			const double max_value = this->_data->max_value();
-			const double min_value = this->_data->min_value();
-			const double scale = s.h/(double)(max_value-min_value);
+			//const double max_value = this->_data->max_value();
+			//const double min_value = this->_data->min_value();
+			const double scale = 
+				s.h/(double)(this->_map_max-this->_map_min);
 
 			color::value();
 
 			glBegin(GL_LINES);
 			for (size_t i = 0; i<this->visible_count(s); i++){
 				const double value = (*this->_data)[i+this->idx_start];
-				const double scaled = (value-min_value)*scale;
+				const double scaled = (value-this->_map_min)*scale;
 				glVertex2d(i, 0.0);
 				glVertex2d(i, scaled);
 			}
@@ -245,7 +284,7 @@ namespace is{
 			if (forcused_idx >= this->idx_start && 
 				forcused_idx <  idx_end){
 				const double value = (*this->_data)[forcused_idx];
-				const double scaled = (value-min_value)*scale;
+				const double scaled = (value-this->_map_min)*scale;
 				const double idx_start = this->idx_start;
 
 				glBegin(GL_LINES);
