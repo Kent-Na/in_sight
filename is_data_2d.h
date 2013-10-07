@@ -51,7 +51,7 @@ namespace is{
 			_info.bytes_per_pixel = _info.channel*sizeof(T);
 		}
 		~Data_2d(){
-			free(data);
+			free(_data);
 		}
 
 		Size image_size() const{
@@ -304,7 +304,7 @@ namespace is{
 		}
 
         size_t min_h(){
-			return 100;
+			return std::min<size_t>(100, max_h());
 		}
 		size_t max_h(){
             const size_t header_size = 14;
@@ -312,7 +312,7 @@ namespace is{
 			return is.h+header_size;
 		}
         size_t min_w(){
-			return 100;
+			return std::min<size_t>(100, max_w());
 		}
 		size_t max_w(){
 			Size is = _data->image_size();
@@ -387,12 +387,21 @@ namespace is{
 			glVertex2d(forcused_idx_vx,vs.h);
 			glVertex2d(0,forcused_idx_vy);
 			glVertex2d(vs.w,forcused_idx_vy);
-            for (size_t i=1 ; i<=12; i++){
+            //if (0) 
+				for (size_t i=1 ; i<=12; i++){
                 if (forcused_idx_vx+g_delta*i<0 ||
                     forcused_idx_vx+g_delta*i>s.w-header_size)
                     continue;
                 glVertex2d(forcused_idx_vx+g_delta*i,0);
                 glVertex2d(forcused_idx_vx+g_delta*i,vs.h);
+            }
+            for (size_t i=1 ; i<=12; i++){
+				auto f_delta = log2(i)*g_delta*12;
+                if (forcused_idx_vx+f_delta<0 ||
+                    forcused_idx_vx+f_delta>s.w-header_size)
+                    continue;
+                glVertex2d(forcused_idx_vx+f_delta,0);
+                glVertex2d(forcused_idx_vx+f_delta,vs.h);
             }
 			glEnd();
 		}
