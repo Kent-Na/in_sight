@@ -547,7 +547,7 @@ namespace is{
 		}
 	};
 
-	View_1d<double>* histgram_of(Core* c, uint8_t *d, Image_info *i){
+	inline View_1d<double>* histgram_of(Core* c, uint8_t *d, Image_info *i){
 		int histgram[256];
 		for (int i=  0; i< 256; i++)
 			histgram[i] = 0;

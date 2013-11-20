@@ -18,4 +18,8 @@ namespace is{
 		size_t layout(Rect r, std::vector<View*> vs);
 	};
 
+	class Matrix_layouter:public Layouter{
+		size_t layout(Rect r, std::vector<View*> vs);
+	};
+
 }

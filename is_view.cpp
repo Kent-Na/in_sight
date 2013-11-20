@@ -468,6 +468,10 @@ namespace is{
 			layouter = new Horizontial_layouter_v1;
 			return;
 		}
+		if (key_name == '/'){
+			layouter = new Matrix_layouter;
+			return;
+		}
 
 		View* v = view_at(e->cursor());
 		if (not v) return;

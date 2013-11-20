@@ -165,4 +165,49 @@ namespace is{
 		}
 		return visible_count;
 	}
+
+	size_t Matrix_layouter::layout(Rect r, std::vector<View*> vs){
+		size_t row = 1;
+		size_t col = vs.size();
+		double min_ratio = 100;//abs(log(aspect ratio))
+
+		for (size_t t_col = 1; t_col<vs.size(); t_col++){
+			auto t_row = vs.size()/t_col;
+			if (vs.size()%t_col) t_row++;
+			auto ratio = fabs(log(
+						(r.s.w/(double)t_row)/(r.s.h/(double)t_col)));
+			if (ratio < min_ratio){
+				min_ratio = ratio;
+				row = t_row;
+				col = t_col;
+			}
+		}
+
+		size_t blank_spot = row*col-vs.size();
+
+		size_t cell_idx = 0;
+		for (size_t cy = 0 ; cy<col; cy++){
+			size_t local_row = row;
+			if (blank_spot != 0){
+				blank_spot --;
+				local_row --;
+			}
+
+			float cell_w = r.s.w/(float)local_row;
+			float cell_h = r.s.h/(float)col; 
+
+			for (size_t cx = 0 ; cx<local_row; cx++){
+				Rect f;
+				f.p.x = floor(cx*cell_w);
+				f.p.y = floor(cy*cell_h);
+				f.s.w = floor((cx+1)*cell_w)-f.p.x;
+				f.s.h = floor((cy+1)*cell_h)-f.p.y;
+				f.p.x += r.p.x;
+				f.p.y += r.p.y;
+				vs[cell_idx]->frame(f);
+				cell_idx ++;
+			}
+		}
+		return vs.size();
+	}
 }

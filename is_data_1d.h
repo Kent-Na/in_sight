@@ -138,6 +138,9 @@ namespace is{
 		size_t min_h(){
 			return 32;
 		}
+		size_t max_w(){
+			return _data->size();
+		}
 
 		size_t idx_end(Size s) const{
 			return std::min(idx_start+s.w, _data->size());
