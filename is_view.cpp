@@ -173,9 +173,10 @@ namespace is{
 		}
 
 		for (int i= 0; i<negative_offset; i++){
-			if (! list_begin->back_list_element())
+			auto back_elem = list_begin->back_list_element();
+			if (! back_elem)
 				break;
-			list_begin= list_begin->next_list_element();
+			list_begin = back_elem;
 		}
 	}
 	size_t View_list::slot_at(Event *e){
@@ -486,4 +487,27 @@ namespace is{
 				      std::string name, int32_t location){
 		scroll_to_all(c, e, name, location);
 	}
+	void View_list::scroll(
+			Core *c, Event *e, int32_t dx, int32_t dy, int32_t dz){
+		View* v = view_at(e->cursor());
+		if (v){
+			v->scroll(c, e, dx, dy, dz);
+			return;
+		}
+		if (dy == 0){
+			return;
+		}
+		else if (dy > 0){
+			auto next = list_begin->next_list_element();	
+			if (next){
+				list_begin = next;
+			}
+		}
+		else{
+			auto back = list_begin->back_list_element();	
+			if (back){
+				list_begin = back;
+			}
+	}
+}
 }

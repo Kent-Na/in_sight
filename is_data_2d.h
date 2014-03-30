@@ -226,9 +226,14 @@ namespace is{
 		Data_2d<T>* _data;
 		std::map<Tile_2d_loc, Data_2d_tile> tiles;
 
+		//Value map
 		Value_map _value_map;
 		T _map_min;
 		T _map_max;
+
+		//grid
+		std::vector<int32_t> _vertical_grid;
+		std::vector<int32_t> _horizontal_grid;
     public:
 		
 		void init(){
@@ -237,6 +242,10 @@ namespace is{
 			_scale_name_x = "x";
 			_scale_name_y = "y";
 			_value_map = Value_map::invalid;
+			_horizontal_grid.clear();
+			_vertical_grid.clear();
+			_horizontal_grid.push_back(0);
+			_vertical_grid.push_back(0);
 		}
 
         View_2d(Core* c, T* d, Image_info *i){
@@ -296,6 +305,34 @@ namespace is{
 				_map_min = 0;
 				_map_max = 255;
 			}
+			return this;
+		}
+		
+		////////////////
+		//Property : grid
+		View_2d* no_grid(){
+			_horizontal_grid.clear();
+			_vertical_grid.clear();
+			return this;
+		}
+
+		View_2d* no_vertical_grid(){
+			_vertical_grid.clear();
+			return this;
+		}
+
+		View_2d* no_horizontal(){
+			_horizontal_grid.clear();
+			return this;
+		}
+
+		View_2d* vertical_grid(std::vector<int32_t> grid){
+			_vertical_grid = grid;
+			return this;
+		}
+
+		View_2d* horizontal(std::vector<int32_t> grid){
+			_horizontal_grid = grid;
 			return this;
 		}
 
@@ -381,28 +418,27 @@ namespace is{
 
             glBindTexture(GL_TEXTURE_2D, 0);
 			glColor4d(0.8,0.7,0.1,0.4);
-
+			
             glBegin(GL_LINES);
-			glVertex2d(forcused_idx_vx,0);
-			glVertex2d(forcused_idx_vx,vs.h);
-			glVertex2d(0,forcused_idx_vy);
-			glVertex2d(vs.w,forcused_idx_vy);
-            //if (0) 
-				for (size_t i=1 ; i<=12; i++){
-                if (forcused_idx_vx+g_delta*i<0 ||
-                    forcused_idx_vx+g_delta*i>s.w-header_size)
+
+			for (size_t i=0 ; i<_vertical_grid.size(); i++){
+				int32_t offset = _vertical_grid[i];
+                if ((int32_t)forcused_idx_vx+offset<0||
+                    forcused_idx_vx+offset>s.w)
                     continue;
-                glVertex2d(forcused_idx_vx+g_delta*i,0);
-                glVertex2d(forcused_idx_vx+g_delta*i,vs.h);
+                glVertex2d(forcused_idx_vx+offset,0);
+                glVertex2d(forcused_idx_vx+offset,vs.h);
             }
-            for (size_t i=1 ; i<=12; i++){
-				auto f_delta = log2(i)*g_delta*12;
-                if (forcused_idx_vx+f_delta<0 ||
-                    forcused_idx_vx+f_delta>s.w-header_size)
+
+			for (size_t i=0 ; i<_horizontal_grid.size(); i++){
+				int32_t offset = _horizontal_grid[i];
+                if ((int32_t)forcused_idx_vy+offset<0||
+                    forcused_idx_vy+offset>s.h-header_size)
                     continue;
-                glVertex2d(forcused_idx_vx+f_delta,0);
-                glVertex2d(forcused_idx_vx+f_delta,vs.h);
+                glVertex2d(0, forcused_idx_vy+offset);
+                glVertex2d(vs.w, forcused_idx_vy+offset);
             }
+
 			glEnd();
 		}
 

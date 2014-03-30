@@ -116,6 +116,7 @@ namespace is{
 		Mouse_event_tracker* 
 			begin_mouse_event(Core *c, Event *e, uint8_t button_id);
 		void key_down(Core *c, Event *e, uint8_t key_name);
+		void scroll(Core *c, Event* e,int32_t dx, int32_t dy, int32_t dz);
 		void scroll_to(Core *c, Event *e,
 				std::string name, int32_t location);
 		void active_view_list();
