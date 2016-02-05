@@ -1,27 +1,26 @@
 #include <math.h>
-#include <functional>
+//#include <functional>
 #include "../in_sight/in_sight.h"
-#include "../tc_math/tc_math.h"
+//#include "../tc_math/tc_math.h"
 
 
 int main(int argc, char** argv)
 {
-	is::GLUT::init(argc,argv);
+	is::native::init(argc,argv);
 
 	auto c = new is::Core;
 
-	new is::GLUT::Window(c);
+	new is::native::Window(c);
 
-	double dat[100];
-	for (int i=0; i<100; i++){
-		dat[i] = sin(i/10.0);
+	size_t data_length = 500;
+	double data[data_length];
+	for (int i=0; i<data_length; i++){
+		data[i] = sin(i*0.01);
 	}
 
-	(new is::View_1d<>(c, dat, 100))
-		->name("dat");
+	new is::View_1d<>(c, data, data_length);
 
-
-	is::GLUT::run();
+	is::native::run();
 
 	return 0;
 }

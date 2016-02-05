@@ -10,6 +10,7 @@
 #include "is_ui_parts.h"
 #include "is_data_1d.h"
 #include "is_data_2d.h"
+#include "is_histgram.h"
 
 #include "is_glut.h"
 #include "is_cocoa.h"

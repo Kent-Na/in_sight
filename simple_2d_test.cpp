@@ -9,7 +9,7 @@ int main(int argc, char** argv)
 
 	auto c = new is::Core;
 
-	size_t w = 1280;
+	size_t w = 1173;
 	size_t h = 720;
 	uint8_t img[w*h];
 
@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 	info.channel = 1;
 	info.bytes_per_pixel = 1;
 	info.bytes_per_row = w;
-	(new is::View_2d(c, img, &info))
+	(new is::View_2d<uint8_t>(c, img, &info))
 		->scale_name_x("x")
 		->scale_name_y("y")
 		->name("frame-1");

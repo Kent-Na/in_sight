@@ -20,6 +20,7 @@ env.Append(CCFLAGS = ['-Wall','-g'])
 #env.Append(CCFLAGS = ['-Wall','-g','-O3'])
 
 cflags = [
+	'-I/usr/local/include',
 	'-fcolor-diagnostics',
 	'-Wno-pointer-sign',
 	'-Wno-deprecated-declarations',
@@ -27,6 +28,7 @@ cflags = [
 	'-Wno-unused']
 
 #env.Append(CFLAGS = 
+env.Append(LIBPATH = ['/usr/local/lib'])
 env.Append(CCFLAGS = cflags)
 env.Append(CXXFLAGS = cflags)
 env.Append(CXXFLAGS = ['-std=gnu++0x'])

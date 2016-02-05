@@ -14,9 +14,13 @@ namespace is{
 		_next = NULL;
 		_back = NULL;
 
-		_is_visible=false;
-		_is_temporaly_visible=false;
-		_is_marked=false;
+		_is_visible = false;
+		_is_temporaly_visible = false;
+		_is_marked = false;
+
+		_transpose = false;
+
+		_name = "unnamed";
 	}
 	View* View::next_list_element() const{
 		return _next;
@@ -34,14 +38,87 @@ namespace is{
 		return _frame;
 	}
 
+	View* View::header_frame(Rect r){
+		_header_frame = r;
+		return this;
+	}
+	Rect View::header_frame() const{
+		return _header_frame;
+	}
+
+	View* View::contents_frame(Rect r){
+		_contents_frame = r;
+		return this;
+	}
+	Rect View::contents_frame() const{
+		return _contents_frame;
+	}
+
 	View* View::name(std::string str){
 		_name = str;
 		return this;
+	}
+	View* View::name(const char* format, ...){
+		va_list args;
+		va_start(args, format);
+
+		va_list args_copy;
+		va_copy(args_copy, args);
+		int len = vsnprintf(NULL, 0, format, args_copy)+1;
+		va_end(args_copy);
+
+		char* buffer = new char[len];
+		vsnprintf(buffer, len, format, args);
+		_name = buffer;
+
+		delete[] buffer;
+		va_end(args);
 	}
 	std::string View::name() const{
 		return _name;
 	}
 
+	View* View::transpose(bool transpose){
+		_transpose = transpose;
+		return this;
+	}
+
+	void View::update(Core *c){
+		if (not _transpose){
+			_contents_frame.p.x = _frame.p.x;
+			_contents_frame.p.y = _frame.p.y;
+			_contents_frame.s.w = _frame.s.w;
+			_contents_frame.s.h = _frame.s.h - header_size;
+		}
+		else{
+			_contents_frame.p.y = _frame.p.x;
+			_contents_frame.p.x = _frame.p.y;
+			_contents_frame.s.h = _frame.s.w;
+			_contents_frame.s.w = _frame.s.h - header_size;
+		}
+
+		_header_frame.p.x = _frame.p.x;
+		_header_frame.p.y = _frame.p.y + _frame.s.h - header_size;
+		_header_frame.s.w = _frame.s.w;
+		_header_frame.s.h = header_size;
+
+		if (not _transpose){
+			update_contents(c);
+		}
+		else{
+			glPushMatrix();
+			double m[16] = {
+				0.0, 1.0, 0.0, 0.0,
+				1.0, 0.0, 0.0, 0.0,
+				0.0, 0.0, 1.0, 0.0,
+				0.0, 0.0, 0.0, 1.0,
+			};
+			glMultMatrixd(m);
+			update_contents(c);
+			glPopMatrix();
+		}
+		update_header(c);
+	}
 	View* View::view_at(Point p){ 
 		return NULL; 
 	}
@@ -71,7 +148,10 @@ namespace is{
 
 	Point View::cursor_in_view_coord(Event *e) const{
 		Point c = e->cursor();
-		return Point(c.x-_frame.p.x, c.y-_frame.p.y);
+		if (not _transpose)
+			return Point(c.x-_frame.p.x, c.y-_frame.p.y);
+		else
+			return Point(c.y-_frame.p.y, c.x-_frame.p.x);
 	}
 
 	void Red_view::update(Core *c){ 

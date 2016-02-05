@@ -37,6 +37,10 @@ namespace is{
 
 	template<typename T = uint8_t>
 	class Data_2d: public Data{
+	public:
+		typedef T Value_type;
+
+	private:
 		T* _data;
 		Image_info _info;
 
@@ -104,10 +108,51 @@ namespace is{
 		}
 	};
 
+	template <typename T>
+	class Data_2d_h_slice: public Data{
+		public:
+		typedef Data_2d<T> Source_type;
+		typedef typename Source_type::Value_type Value_type;
+
+		private:
+		Source_type* _data_2d;
+		size_t _y;
+		size_t _ch;
+
+		public:
+		Data_2d_h_slice(Source_type* d2d){
+			_data_2d = d2d;	
+			_y = 0;
+			_ch = 0;
+		}
+
+		size_t size() const {
+			return _data_2d->image_size().w;
+		}
+		double min() const {
+			return _data_2d->min();
+		}
+		double  max() const {
+			return _data_2d->max();
+		}
+
+		void y(size_t value){
+			_y = value;
+			if (_y >= _data_2d->image_size().h)
+				_y = _data_2d->image_size().h-1;
+		}
+
+		double  operator [] (size_t idx){
+			return _data_2d->value_at(idx, _y, _ch);
+		}
+	};
+
 	class Data_2d_tile{
 		GLuint texture;
 		size_t w;
 		size_t h;
+		size_t tw;
+		size_t th;
 		size_t ch;
 
 		public:
@@ -123,9 +168,9 @@ namespace is{
 			if (texture)
 				unload_texture();
 			if (ch == 1)
-				texture = texture_from_grayscale(img_data, w, h);
+				texture = texture_from_grayscale(img_data, tw, th);
 			else if (ch == 3)
-				texture = texture_from_rgb(img_data, w, h);
+				texture = texture_from_rgb(img_data, tw, th);
 		}
 		void unload_texture(){
 			if (texture)
@@ -137,13 +182,13 @@ namespace is{
 				size_t dst_x, size_t dst_y, size_t dst_w, size_t dst_h){
             glBindTexture(GL_TEXTURE_2D, texture);
             glBegin(GL_TRIANGLE_STRIP);
-            glTexCoord2f  ((src_x      )/(float)w, (src_y      )/(float)h);	
+            glTexCoord2f ((src_x      )/(float)tw, (src_y      )/(float)th);
 			glVertex2f   (dst_x,       dst_y      );
-            glTexCoord2f  ((src_x+src_w)/(float)w, (src_y      )/(float)h);	
+            glTexCoord2f ((src_x+src_w)/(float)tw, (src_y      )/(float)th);
 			glVertex2f   (dst_x+dst_w, dst_y      );
-            glTexCoord2f  ((src_x      )/(float)w, (src_y+src_h)/(float)h);	
+            glTexCoord2f ((src_x      )/(float)tw, (src_y+src_h)/(float)th);
 			glVertex2f   (dst_x,       dst_y+dst_h);
-            glTexCoord2f  ((src_x+src_w)/(float)w, (src_y+src_h)/(float)h);	
+            glTexCoord2f ((src_x+src_w)/(float)tw, (src_y+src_h)/(float)th);
 			glVertex2f   (dst_x+dst_w, dst_y+dst_h);
             glEnd();
 		}
@@ -157,27 +202,33 @@ namespace is{
 				Value_map c_map, T m_min, T m_max){
 			const Image_info &i_info = data->info();
 			const size_t t_size = Data_2d_tile::max_tile_size;
+			size_t tw = t_size;
+			size_t th = t_size;
 			size_t w  = std::min(i_info.w-tx*t_size, t_size);
 			size_t h  = std::min(i_info.h-ty*t_size, t_size);
 			size_t ch = i_info.channel;
 
-			uint8_t *img_data = (uint8_t*)malloc(w*h*ch);
+			uint8_t *img_data = (uint8_t*)malloc(tw*th*ch);
 			this->w = w;
 			this->h = h;
+			this->tw = tw;
+			this->th = th;
 			this->ch = ch;
 
 			uint8_t *in = (uint8_t*)data->data();
 			uint8_t *out = img_data;
-			uint8_t *out_itr = out;
 
 			if (c_map == Value_map::direct){
 				for (int y= 0; y<h; y++){
 					uint8_t *row_in = in+i_info.bytes_per_row*(y+ty*t_size);
+					uint8_t *row_out  = out+ch*tw*y;
 					for (int x= 0; x<w; x++){
 						uint8_t *pixel_in = 
 							row_in+i_info.bytes_per_pixel*(x+tx*t_size);
+						uint8_t *pixel_out =
+							row_out+ch*x;
 						for (int i = 0; i<ch; i++){
-							*(out_itr++) = ((T*)pixel_in)[i];
+							pixel_out[i] = ((T*)pixel_in)[i];
 						}
 					}
 				}
@@ -186,12 +237,15 @@ namespace is{
 				float s = 255.0f/(m_max-m_min);
 				for (int y= 0; y<h; y++){
 					uint8_t *row_in = in+i_info.bytes_per_row*(y+ty*t_size);
+					uint8_t *row_out  = out+ch*tw*y;
 					for (int x= 0; x<w; x++){
 						uint8_t *pixel_in = 
 							row_in+i_info.bytes_per_pixel*(x+tx*t_size);
+						uint8_t *pixel_out =
+							row_out+ch*x;
 						for (int i = 0; i<ch; i++){
 							auto v = ((T*)pixel_in)[i];
-							*(out_itr++) = (v-m_min)*s;
+							pixel_out[i ]= (v-m_min)*s;
 						}
 					}
 				}
@@ -218,6 +272,9 @@ namespace is{
 
 	template<typename T = uint8_t>
 	class View_2d:public View{
+	public:
+		typedef T Value_type;
+	private:
         int32_t idx_start_x;
         int32_t idx_start_y;
 	protected:
@@ -234,6 +291,11 @@ namespace is{
 		//grid
 		std::vector<int32_t> _vertical_grid;
 		std::vector<int32_t> _horizontal_grid;
+
+		//slice
+		Data_2d_h_slice<Value_type>* _h_slice_data;
+		View_1d_graph_base<Data_2d_h_slice<Value_type>>* _h_slice_view;
+
     public:
 		
 		void init(){
@@ -246,6 +308,8 @@ namespace is{
 			_vertical_grid.clear();
 			_horizontal_grid.push_back(0);
 			_vertical_grid.push_back(0);
+			_h_slice_data = nullptr;
+			_h_slice_view = nullptr;
 		}
 
         View_2d(Core* c, T* d, Image_info *i){
@@ -335,23 +399,35 @@ namespace is{
 			_horizontal_grid = grid;
 			return this;
 		}
+		////////////////
+		//Property : slice
+		View_2d* make_holizontal_slice(Core* c){
+			if (_h_slice_data || _h_slice_view) return this;
+			_h_slice_data = new Data_2d_h_slice<Value_type>(_data);
+			_h_slice_view = 
+				new View_1d_bar_graph<Data_2d_h_slice<Value_type>>(
+						c, _h_slice_data);
+			_h_slice_view
+				->scale_name(scale_name_x())
+				->name("slice");
+			return this;
+		}
 
 		Data* data() const{
 			return _data;
 		}
 
-        size_t min_h(){
-			return std::min<size_t>(100, max_h());
+        size_t min_contents_h(){
+			return std::min<size_t>(100, max_contents_h());
 		}
-		size_t max_h(){
-            const size_t header_size = 14;
+		size_t max_contents_h(){
 			Size is = _data->image_size();
-			return is.h+header_size;
+			return is.h;
 		}
-        size_t min_w(){
-			return std::min<size_t>(100, max_w());
+        size_t min_contents_w(){
+			return std::min<size_t>(100, max_contents_w());
 		}
-		size_t max_w(){
+		size_t max_contents_w(){
 			Size is = _data->image_size();
 			return is.w;
 		}
@@ -442,23 +518,26 @@ namespace is{
 			glEnd();
 		}
 
-		void update(Core *c){
-            const size_t header_size = 14;
-			Rect f = frame();
+		void update_contents(Core *c){
+			Rect f = contents_frame();
 
 			glPushMatrix();
 			glTranslated(f.p.x, f.p.y, 0);
-            update_image(c, Size(f.s.w, f.s.h-header_size));
-            update_forcus(c, Size(f.s.w, f.s.h-header_size));
-			glPopMatrix();
-            
-            glPushMatrix();
-			glTranslated(f.p.x,f.p.y+f.s.h-header_size,0);
-			update_header(c, f.s);
-            update_seek_bar(c, Size(f.s.w, f.s.h-header_size));
+            update_image(c, f.s);
+            update_forcus(c, f.s);
 			glPopMatrix();
 		}
-		void update_header(Core *c, Size s) const{
+
+		void update_header(Core *c){
+			Rect f = header_frame();
+
+            glPushMatrix();
+			glTranslated(f.p.x,f.p.y,0);
+			update_header_str(c, f.s);
+            update_seek_bar(c, f.s);
+			glPopMatrix();
+		}
+		void update_header_str(Core *c, Size s) const{
 			Size is = _data->image_size();
 			Size vs(std::min(s.w,is.w),std::min(s.h,is.h));
 			Size is_end(idx_start_x+vs.w, idx_start_y+vs.h);
@@ -510,12 +589,12 @@ namespace is{
 			}
 			//y
 			{
-				Point sp = {s.w - ss.w, 1};
+				Point sp = {s.h - ss.h, 1};
 				draw_seek_bar(sp, ss, is.h, idx_start_y, idx_start_y+vs.h);
 			}
 		}
 		void mouse_move(Core *c, Event* e){
-			Rect f = frame();
+			Rect f = contents_frame();
 			if (not f.in_side(e->cursor()))
 				return;
 
@@ -524,9 +603,13 @@ namespace is{
 			std::string &s_name_y = _scale_name_y;
 			c->set_scale(s_name_x, idx_start_x+p.x);
 			c->set_scale(s_name_y, idx_start_y+p.y);
+
+			if (_h_slice_data){
+				_h_slice_data->y(idx_start_y+p.y);
+			}
 		}
         void scroll(Core* c, Event* e, int32_t dx, int32_t dy, int32_t dz){
-			Rect f = frame();
+			Rect f = contents_frame();
 
 			if ((int32_t)idx_start_x < -dx)
 				idx_start_x = 0;
@@ -556,7 +639,7 @@ namespace is{
 			e->window()->scroll_to(_scale_name_y, idx_start_y);
 		}
 		void scroll_to(Core *c, Event *e, std::string name, int32_t value){
-			Rect f = frame();
+			Rect f = contents_frame();
 			Size is = _data->image_size();
 			if (name == _scale_name_x){
 				idx_start_x = value;
@@ -583,31 +666,5 @@ namespace is{
 		}
 	};
 
-	inline View_1d<double>* histgram_of(Core* c, uint8_t *d, Image_info *i){
-		int histgram[256];
-		for (int i=  0; i< 256; i++)
-			histgram[i] = 0;
-
-		for (size_t y = 0; y<i->h; y++){
-			const uint8_t *row_adr = d+y*i->bytes_per_row;
-			for (size_t x = 0; x<i->w; x++){
-				const uint8_t *pixel_adr = 
-					row_adr+x*i->bytes_per_pixel;
-				for (size_t ch = 0; ch<i->channel; ch++){
-					 histgram[pixel_adr[ch]]++;
-				}
-			}
-		}
-
-		double histgram_d[256];
-		double sum = 0;
-		for (int i=  0; i< 256; i++){
-			sum += histgram[i];
-			histgram_d[i] = sum;
-
-			//histgram_d[i] = histgram[i];
-		}
-		return new is::View_1d<double>(c, histgram_d, 256);
-	}
 
 }

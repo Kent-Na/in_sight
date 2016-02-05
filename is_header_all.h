@@ -3,6 +3,7 @@
 
 
 namespace is{
+	constexpr size_t header_size = 14;
 
 	class Core;
 	class Layouter;

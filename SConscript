@@ -11,7 +11,12 @@ mainFiles = [
 	'is_layouter.cpp',
 ]
 
-main = ['cocoa_test.cpp']
+#main = ['cocoa_test.cpp']
+#main.extend(mainFiles)
+
+#env.Program(target = 'main', source = main)
+
+main = ['dist_test.cpp']
 main.extend(mainFiles)
 
 env.Program(target = 'main', source = main)
@@ -26,10 +31,10 @@ env.Program(target = 'main', source = main)
 
 #env.Program(target = 'static_cc', source = main)
 
-#main = ['simple_2d_test.cpp']
-#main.extend(mainFiles)
+main = ['simple_2d_test.cpp']
+main.extend(mainFiles)
 
-#env.Program(target = '2d_test', source = main)
+env.Program(target = '2d_test', source = main)
 
 #main = ['simple_test.cpp']
 #main.extend(mainFiles)

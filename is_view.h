@@ -4,7 +4,10 @@ namespace is{
 	class View_list;
 
 	class View{
-		Rect _frame;// in Window coord
+		Rect _frame;// in Window coord. Set by auto layouter.
+		Rect _contents_frame;// in Window coord
+		Rect _header_frame;// in Window coord
+		bool _transpose;
 
 		public:
 		View();
@@ -13,13 +16,24 @@ namespace is{
 
 		View* frame(Rect r);
 		Rect frame() const;
+
+		View* header_frame(Rect r);
+		Rect header_frame() const;
+
+		View* contents_frame(Rect r);
+		Rect contents_frame() const;
 		
 		///
 		//Auto layout hints
-		virtual size_t min_h() { return 0; }
-		virtual size_t max_h() { return 200; }
-		virtual size_t min_w() { return 0; }
-		virtual size_t max_w() { return 200; }
+		virtual size_t min_contents_h() { return 0; }
+		virtual size_t max_contents_h() { return 200; }
+		virtual size_t min_contents_w() { return 0; }
+		virtual size_t max_contents_w() { return 200; }
+
+		size_t min_h() { return min_contents_h()+header_size; }
+		size_t max_h() { return max_contents_h()+header_size; }
+		size_t min_w() { return min_contents_w(); }
+		size_t max_w() { return max_contents_w(); }
 	
 		///
 		//Dimentions
@@ -27,9 +41,11 @@ namespace is{
 		virtual size_t contents_width() {return 0; };
 		virtual size_t contents_height() {return 0; };
 
-		//
-		//contents
-		virtual void update(Core *c){ return; }
+		///
+		//Contents
+		void update(Core *c);
+		virtual void update_contents(Core *c){ return; }
+		virtual void update_header(Core *c){ return; }
 
 		///
 		//Events
@@ -78,7 +94,10 @@ namespace is{
 			{ return _is_marked; };
 
 		View* name(std::string);
+		View* name(const char* format, ...);
 		std::string name() const;
+
+		View* transpose(bool = true);
 
 		friend class View_list;
 	};
