@@ -60,7 +60,6 @@ namespace is{
 		void init(){
 			_grid_interval = 0;
 			_scale_name = "x";
-			_transposed = false;
 			idx_start = 0;
 			value_map(Value_map::min_to_max, 0, 0);
 		}
@@ -72,7 +71,6 @@ namespace is{
 		Value_type _map_min;
 		Value_type _map_max;
 		Value_map _value_map;
-		bool _transposed;
 
 		public:
 
@@ -117,10 +115,6 @@ namespace is{
 			_grid_interval = value;
 			return this;
 		}
-		View_1d_graph_base* transpose(){
-			_transposed = true;
-			return this;
-		}
 
 		View_1d_graph_base* value_map(
 				Value_map method, Value_type min, Value_type max){
@@ -159,28 +153,16 @@ namespace is{
 		}
 
 		size_t min_contents_h(){
-			if (_transposed)
-				return 0;
-			else
-				return 32;
+			return 32;
 		}
 		size_t min_contents_w(){
-			if (!_transposed)
-				return 0;
-			else
-				return 32;
+			return 0;
 		}
 		size_t max_contents_w(){
-			if (_transposed)
-				return 200;
-			else
-				return _data->size();
+			return _data->size();
 		}
 		size_t max_contents_h(){
-			if (!_transposed)
-				return 200;
-			else
-				return _data->size();
+			return 200;
 		}
 		/*
 		size_t min_w(){
@@ -191,11 +173,15 @@ namespace is{
 		}
 		*/
 
-		size_t idx_end(Size s) const{
+		size_t idx_end() const{
+			Rect f = this->contents_frame();
+			Size s = f.s;
 			return std::min(idx_start+s.w, _data->size());
 		}
 
-		size_t visible_count(Size s) const{
+		size_t visible_count() const{
+			Rect f = this->contents_frame();
+			Size s = f.s;
 			return std::min(s.w, _data->size() - idx_start);
 		}
 
@@ -203,34 +189,14 @@ namespace is{
 			Rect f = this->contents_frame();
 			//const size_t header_size = 14;
 
-			
-			if (_transposed){
-				glPushMatrix();
-				glTranslated(f.p.x,f.p.y,0);
-				double m[16] = {
-					0.0, 1.0, 0.0, 0.0,
-					1.0, 0.0, 0.0, 0.0,
-					0.0, 0.0, 1.0, 0.0,
-					0.0, 0.0, 0.0, 1.0,
-				};
-				glMultMatrixd(m);
-
-				Size vs(f.s.h, f.s.w);
-				this->update_grid(vs);
-				this->update_invalid(vs);
-				update_data(c, vs);
-				glPopMatrix();
-			}
-			else{
-				glPushMatrix();
-				glTranslated(f.p.x,f.p.y,0);
-				Size vs = f.s;
-					//vs(f.s.w, f.s.h-header_size);
-				this->update_grid(vs);
-				this->update_invalid(vs);
-				update_data(c, vs);
-				glPopMatrix();
-			}
+			glPushMatrix();
+			glTranslated(f.p.x,f.p.y,0);
+			Size vs = f.s;
+				//vs(f.s.w, f.s.h-header_size);
+			this->update_grid(vs);
+			this->update_invalid(vs);
+			update_data(c, vs);
+			glPopMatrix();
 
 			//glPushMatrix();
 			//glTranslated(f.p.x,f.p.y+f.s.h-header_size,0);
@@ -250,7 +216,7 @@ namespace is{
 
 			glBegin(GL_LINES);
 			for (size_t i = grid_start; 
-					i<visible_count(s); i+=_grid_interval){
+					i<visible_count(); i+=_grid_interval){
 				glVertex2d(i, 0);
 				glVertex2d(i, s.h);
 			}
@@ -263,8 +229,8 @@ namespace is{
 
 		void update_invalid(Size s) const{
 			color::invalid();
-			draw_rect(visible_count(s), 0, 
-					s.w-visible_count(s), s.h);
+			draw_rect(visible_count(), 0, 
+					s.w-visible_count(), s.h);
 		}
 
 		void update_header(Core *c){
@@ -290,7 +256,7 @@ namespace is{
 				s_s << "OOB";
 			}
 			
-			s_s << " {" << idx_start << "-" << idx_end(s) << "}";
+			s_s << " {" << idx_start << "-" << idx_end() << "}";
 
 			std::string str = s_s.str();
 			Text_texture *tex_gen = shared_text_texture();
@@ -307,37 +273,25 @@ namespace is{
 		}
 		void update_seek_bar(Core *c, Size s) const{
 			Size ss = {50,12};
-			if (!_transposed){
-				Point sp = {s.w - ss.w, 1};
-				draw_seek_bar(sp, ss, _data->size(), idx_start, idx_end(s));
-			}
-			else{
-				Point sp = {s.h - ss.h, 1};
-				draw_seek_bar(sp, ss, _data->size(), idx_start, idx_end(s));
-			}
+			Point sp = {s.w - ss.w, 1};
+			draw_seek_bar(sp, ss, _data->size(), idx_start, idx_end());
 		}
 
 		void mouse_move(Core* c, Event* e){
-			Rect f = contents_frame();
+			Rect f = frame();
 			if (not f.in_side(e->cursor()))
 				return;
 
 			Point p = cursor_in_view_coord(e);
 			std::string s_name = _scale_name;
-			if (_transposed){
-				c->set_scale(s_name, idx_start+p.y);
-			}
-			else{
-				c->set_scale(s_name, idx_start+p.x);
-			}
+			c->set_scale(s_name, idx_start+p.x);
 		}
 		void scroll(Core *c, Event *e, int32_t dx, int32_t dy, int32_t dz){
 			Rect f = contents_frame();
 			int32_t delta = dx;
 			int32_t view_length = f.s.w;
-			if (_transposed){
+			if (is_transposed()){
 				delta = dy;
-				view_length = f.s.h;
 			}
 
 			if ((int32_t)idx_start < -delta)
@@ -357,9 +311,6 @@ namespace is{
 		void scroll_to(Core *c, Event *e, std::string name, int32_t value){
 			Rect f = contents_frame();
 			int32_t view_length = f.s.w;
-			if (_transposed){
-				view_length = f.s.h;
-			}
 
 			if (name != _scale_name)
 				return;
@@ -389,7 +340,7 @@ namespace is{
 
 		void update_data(Core *c,Size s) const{
 			glTranslated(0.5,0,0);
-			const size_t idx_end = this->idx_end(s);
+			const size_t idx_end = this->idx_end();
 
 			//const double max_value = this->_data->max_value();
 			//const double min_value = this->_data->min_value();
@@ -399,7 +350,7 @@ namespace is{
 			color::value();
 
 			glBegin(GL_LINES);
-			for (size_t i = 0; i<this->visible_count(s); i++){
+			for (size_t i = 0; i<this->visible_count(); i++){
 				const double value = (*this->_data)[i+this->idx_start];
 				const double scaled = (value-this->_map_min)*scale;
 				glVertex2d(i, 0.0);
@@ -426,8 +377,64 @@ namespace is{
 			glEnd();
 			glTranslated(-0.5,0,0);
 		}
-		
+	};
 
+	template<typename T>
+	class View_1d_density_graph:public View_1d_graph_base<T>{
+		public:
+		typedef typename View_1d_graph_base<T>::Value_type Value_type;
+		typedef typename View_1d_graph_base<T>::Data_source Data_source;
+
+		View_1d_density_graph(Core *c, std::vector<Value_type> d):
+			View_1d_graph_base<T>(c, d) { return; }
+		View_1d_density_graph(Core *c, Value_type* d, size_t len):
+			View_1d_graph_base<T>(c, d, len) { return; }
+		View_1d_density_graph(Core *c, Data_source* d):
+			View_1d_graph_base<T>(c, d) { return; }
+
+		size_t min_contents_h(){
+			return 16;
+		}
+		size_t max_contents_h(){
+			return 16;
+		}
+
+		void update_data(Core *c,Size s) const{
+			glTranslated(0.5,0,0);
+			const size_t idx_end = this->idx_end();
+
+			//const double max_value = this->_data->max_value();
+			//const double min_value = this->_data->min_value();
+			const double scale = 
+				1.0/(double)(this->_map_max-this->_map_min);
+
+			color::value();
+
+			glBegin(GL_LINES);
+			for (size_t i = 0; i<this->visible_count(); i++){
+				const double value = (*this->_data)[i+this->idx_start];
+				const double scaled = (value-this->_map_min)*scale;
+				glColor4d(scaled,scaled,scaled,1.0);
+				glVertex2d(i, 0.0);
+				glVertex2d(i, s.h);
+			}
+			glEnd();
+		
+			size_t forcused_idx = c->get_scale(this->_scale_name);
+			glBegin(GL_LINES);
+			if (forcused_idx >= this->idx_start && 
+				forcused_idx <  idx_end){
+				const double value = (*this->_data)[forcused_idx];
+				const double scaled = (value-this->_map_min)*scale;
+				const double idx_start = this->idx_start;
+
+				color::hilight();
+				glVertex2d(forcused_idx-idx_start, 0.0);
+				glVertex2d(forcused_idx-idx_start, s.h);
+			}
+			glEnd();
+			glTranslated(-0.5,0,0);
+		}
 	};
 
 	template<typename T>

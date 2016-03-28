@@ -14,6 +14,18 @@ namespace is{
 		void set_scale(std::string name, size_t value);
 
 		void add(View *v);
+
+		//opengl state related
+
+		private:
+		bool gl_state_initialized;
+		GLuint shader_program_argb;
+		GLuint shader_program_plain;
+
+		public:
+		void argb_mode();
+		void plain_mode();
+		void load_shader();
 	};
 
 	class Window{

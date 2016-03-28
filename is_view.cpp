@@ -18,7 +18,8 @@ namespace is{
 		_is_temporaly_visible = false;
 		_is_marked = false;
 
-		_transpose = false;
+		_is_transposed = false;
+		_has_header = true;
 
 		_name = "unnamed";
 	}
@@ -54,6 +55,38 @@ namespace is{
 		return _contents_frame;
 	}
 
+	size_t View::min_h() { 
+		if (not _is_transposed)
+			return min_contents_h()+header_height(); 
+		else
+			return min_contents_w()+header_height(); 
+	}
+	size_t View::max_h() { 
+		if (not _is_transposed)
+			return max_contents_h()+header_height(); 
+		else
+			return max_contents_w()+header_height(); 
+	}
+	size_t View::min_w() { 
+		if (not _is_transposed)
+			return min_contents_w(); 
+		else
+			return min_contents_h(); 
+	}
+	size_t View::max_w() { 
+		if (not _is_transposed)
+			return max_contents_w(); 
+		else
+			return max_contents_h(); 
+	}
+
+	size_t View::header_height() const {
+		if (_has_header)
+			return header_size;
+		else
+			return 0;
+	}
+
 	View* View::name(std::string str){
 		_name = str;
 		return this;
@@ -73,36 +106,32 @@ namespace is{
 
 		delete[] buffer;
 		va_end(args);
+		return this;
 	}
 	std::string View::name() const{
 		return _name;
 	}
 
-	View* View::transpose(bool transpose){
-		_transpose = transpose;
-		return this;
-	}
-
 	void View::update(Core *c){
-		if (not _transpose){
+		if (not _is_transposed){
 			_contents_frame.p.x = _frame.p.x;
 			_contents_frame.p.y = _frame.p.y;
 			_contents_frame.s.w = _frame.s.w;
-			_contents_frame.s.h = _frame.s.h - header_size;
+			_contents_frame.s.h = _frame.s.h - header_height();
 		}
 		else{
 			_contents_frame.p.y = _frame.p.x;
 			_contents_frame.p.x = _frame.p.y;
 			_contents_frame.s.h = _frame.s.w;
-			_contents_frame.s.w = _frame.s.h - header_size;
+			_contents_frame.s.w = _frame.s.h - header_height();
 		}
 
 		_header_frame.p.x = _frame.p.x;
-		_header_frame.p.y = _frame.p.y + _frame.s.h - header_size;
+		_header_frame.p.y = _frame.p.y + _frame.s.h - header_height();
 		_header_frame.s.w = _frame.s.w;
-		_header_frame.s.h = header_size;
+		_header_frame.s.h = header_height();
 
-		if (not _transpose){
+		if (not _is_transposed){
 			update_contents(c);
 		}
 		else{
@@ -117,7 +146,9 @@ namespace is{
 			update_contents(c);
 			glPopMatrix();
 		}
-		update_header(c);
+
+		if (_has_header)
+			update_header(c);
 	}
 	View* View::view_at(Point p){ 
 		return NULL; 
@@ -148,7 +179,7 @@ namespace is{
 
 	Point View::cursor_in_view_coord(Event *e) const{
 		Point c = e->cursor();
-		if (not _transpose)
+		if (not _is_transposed)
 			return Point(c.x-_frame.p.x, c.y-_frame.p.y);
 		else
 			return Point(c.y-_frame.p.y, c.x-_frame.p.x);
@@ -304,9 +335,10 @@ namespace is{
 		}
 	}
 	void View_list::reset_visible(size_t begin, size_t end){
-		View* v = view_at_slot(std::min(begin, end));
-		size_t count = abs(begin-end);
-		for (int i = 0; i<=count; i++){
+		size_t begin_d = std::min(begin, end);
+		size_t end_d = std::max(begin, end);
+		View* v = view_at_slot(begin_d);
+		for (int i = begin_d; i<=end_d; i++){
 			if (v == NULL)
 				return;
 			v->reset_visible();
@@ -314,9 +346,10 @@ namespace is{
 		}
 	}
 	void View_list::mark(size_t begin, size_t end){
-		View* v = view_at_slot(std::min(begin, end));
-		size_t count = abs(begin-end);
-		for (int i = 0; i<=count; i++){
+		size_t begin_d = std::min(begin, end);
+		size_t end_d = std::max(begin, end);
+		View* v = view_at_slot(begin_d);
+		for (int i = begin_d; i<=end_d; i++){
 			if (v == NULL)
 				return;
 			v->mark();
@@ -324,9 +357,10 @@ namespace is{
 		}
 	}
 	void View_list::unmark(size_t begin, size_t end){
-		View* v = view_at_slot(std::min(begin, end));
-		size_t count = abs(begin-end);
-		for (int i = 0; i<=count; i++){
+		size_t begin_d = std::min(begin, end);
+		size_t end_d = std::max(begin, end);
+		View* v = view_at_slot(begin_d);
+		for (int i = begin_d; i<=end_d; i++){
 			if (v == NULL)
 				return;
 			v->unmark();
@@ -578,16 +612,22 @@ namespace is{
 			return;
 		}
 		else if (dy > 0){
-			auto next = list_begin->next_list_element();	
-			if (next){
+			int offset = dy/8;
+			if (offset  == 0) offset = 1;
+			for (int i = 0; i<offset; i++){
+				auto next = list_begin->next_list_element();	
+				if (next == nullptr) break;
 				list_begin = next;
 			}
 		}
 		else{
-			auto back = list_begin->back_list_element();	
-			if (back){
+			int offset = -dy/8;
+			if (offset  == 0) offset = 1;
+			for (int i = 0; i<offset; i++){
+				auto back = list_begin->back_list_element();	
+				if (back == nullptr) break;
 				list_begin = back;
 			}
+		}
 	}
-}
 }
