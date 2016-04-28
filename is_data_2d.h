@@ -171,6 +171,8 @@ namespace is{
 				texture = texture_from_grayscale(img_data, tw, th);
 			else if (ch == 3)
 				texture = texture_from_rgb(img_data, tw, th);
+			else if (ch == 4)
+				texture = texture_from_rgba(img_data, tw, th);
 		}
 		void unload_texture(){
 			if (texture)
@@ -361,7 +363,7 @@ namespace is{
 				_map_max = 0;
 			}
 			if (method == Value_map::balanced){
-				T s = std::max<T>(fabs(min_value),max_value);
+				T s = std::max<T>(abs(min_value),max_value);
 				_map_min = -s;
 				_map_max = s;
 			}
@@ -436,6 +438,8 @@ namespace is{
 			Size is = _data->image_size();
 			Size vs(std::min(s.w,is.w),std::min(s.h,is.h));
             
+			if (_data->info().channel == 4)
+				c->argb_mode();
 			glColor4d(1,1,1,1);
 
             const int ix_min = idx_start_x;
@@ -478,6 +482,8 @@ namespace is{
 							w, h);
 				}
 			}
+			if (_data->info().channel == 4)
+				c->plain_mode();
         }
 		void update_forcus(Core *c, Size s){
             const size_t header_size = 14;
@@ -578,18 +584,19 @@ namespace is{
 			glDeleteTextures(1, &tex);
 		}
 		void update_seek_bar(Core *c, Size s) const{
-			Size ss = {50,12};
+			Size ss = {50,12/2};
 			Size is = _data->image_size();
-			Size vs(std::min(s.w,is.w),std::min(s.h,is.h));
+			Size cs = contents_frame().s;
+			Size vs(std::min(s.w,cs.w),std::min(s.h,cs.h));
             glBindTexture(GL_TEXTURE_2D, 0);
 			//x
 			{
-				Point sp = {s.w - ss.w-52, 1};
+				Point sp = {s.w - ss.w, 1};
 				draw_seek_bar(sp, ss, is.w, idx_start_x, idx_start_x+vs.w);
 			}
 			//y
 			{
-				Point sp = {s.h - ss.h, 1};
+				Point sp = {s.w - ss.w, 1+12/2};
 				draw_seek_bar(sp, ss, is.h, idx_start_y, idx_start_y+vs.h);
 			}
 		}

@@ -173,7 +173,7 @@ namespace is{
 	};
 
 	Window_internal::Window_internal(Window *w){
-		NSRect frame = NSMakeRect(0,0,800,600);
+		NSRect frame = NSMakeRect(0,0,1800,1100);
 		window = [[NSWindow alloc] initWithContentRect:frame
 											 styleMask:
 				  NSTitledWindowMask|

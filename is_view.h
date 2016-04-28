@@ -7,19 +7,23 @@ namespace is{
 		Rect _frame;// in Window coord. Set by auto layouter.
 		Rect _contents_frame;// in Window coord
 		Rect _header_frame;// in Window coord
-		bool _transpose;
+		bool _is_transposed;
+		bool _has_header;
 
 		public:
 		View();
 		virtual ~View(){ return; }
 		virtual View* clone() { return NULL; }
 
+		//In window grobal coordinate.
 		View* frame(Rect r);
 		Rect frame() const;
 
+		//In view coordinate.
 		View* header_frame(Rect r);
 		Rect header_frame() const;
 
+		//In view coordinate.
 		View* contents_frame(Rect r);
 		Rect contents_frame() const;
 		
@@ -30,10 +34,12 @@ namespace is{
 		virtual size_t min_contents_w() { return 0; }
 		virtual size_t max_contents_w() { return 200; }
 
-		size_t min_h() { return min_contents_h()+header_size; }
-		size_t max_h() { return max_contents_h()+header_size; }
-		size_t min_w() { return min_contents_w(); }
-		size_t max_w() { return max_contents_w(); }
+		size_t min_h();
+		size_t max_h();
+		size_t min_w();
+		size_t max_w();
+
+		size_t header_height() const;
 	
 		///
 		//Dimentions
@@ -97,7 +103,11 @@ namespace is{
 		View* name(const char* format, ...);
 		std::string name() const;
 
-		View* transpose(bool = true);
+		View* set_transpose() {_is_transposed = true; return this; };
+		View* reset_transpose() {_is_transposed = false; return this; };
+		bool is_transposed() {return _is_transposed; };
+
+		View* no_header(){_has_header = false; return this; };
 
 		friend class View_list;
 	};

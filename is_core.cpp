@@ -15,6 +15,10 @@ namespace is{
 	Core::Core(){
 		default_view = new View_list;
 		main_window = NULL;
+
+		gl_state_initialized = false;
+		shader_program_argb = 0;
+		shader_program_plain = 0;
 	}
 
 	size_t Core::get_scale(std::string name){
@@ -35,6 +39,82 @@ namespace is{
 		else{
 			printf("WTF\n");
 		};
+	}
+
+	void Core::argb_mode(){
+		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glUseProgram(shader_program_argb);
+	}
+	void Core::plain_mode(){
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glUseProgram(shader_program_plain);
+		glUseProgram(0);
+	}
+
+	void Core::load_shader(){
+		if (gl_state_initialized == true)
+			return;
+		gl_state_initialized = true;
+
+		glCreateShader(GL_FRAGMENT_SHADER);
+		const char* argb_fragment_code= 
+"\
+uniform sampler2D tex;\
+\
+void main()\
+{\
+gl_FragColor = gl_Color * texture2D(tex, gl_TexCoord[0].xy).bgra;\
+}\
+";
+
+		const char* plain_fragment_code= 
+"\
+uniform sampler2D tex;\
+\
+void main()\
+{\
+gl_FragColor = gl_Color * texture2D(tex, gl_TexCoord[0].xy);\
+}\
+";
+		const char* vertex_code = 
+"\
+void main()\
+{\
+	gl_FrontColor = gl_Color;\
+	gl_TexCoord[0] = gl_MultiTexCoord0;\
+	gl_Position = ftransform();\
+}\
+";
+		auto shader_from_code = [](const char* code, GLuint type)->GLuint{
+			GLuint shader = glCreateShader(type);
+			glShaderSource(shader, 1, &code, NULL);
+			glCompileShader(shader);
+			return shader;
+		};
+
+		GLuint f_shader_argb = 
+			shader_from_code(argb_fragment_code, GL_FRAGMENT_SHADER);
+		GLuint f_shader_plain = 
+			shader_from_code(plain_fragment_code, GL_FRAGMENT_SHADER);
+		GLuint v_shader= 
+			shader_from_code(vertex_code, GL_VERTEX_SHADER);
+
+		shader_program_argb = glCreateProgram();
+		glAttachShader(shader_program_argb, f_shader_argb);
+		glAttachShader(shader_program_argb, v_shader);
+		glLinkProgram(shader_program_argb);
+
+		shader_program_plain = glCreateProgram();
+		glAttachShader(shader_program_plain, f_shader_plain);
+		glAttachShader(shader_program_plain, v_shader);
+		glLinkProgram(shader_program_plain);
+
+		//glUseProgram(shader_program_plain);
+		glUniform1i(glGetUniformLocation(shader_program_plain,"tex"),0);
+		glUniform1i(glGetUniformLocation(shader_program_argb,"tex"),0);
+
+		glActiveTexture(GL_TEXTURE0);
 	}
 
 	Window::Window(Core* c):core(c){
@@ -67,7 +147,10 @@ namespace is{
 		glEnable(GL_TEXTURE_2D);
 		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		
+		core->load_shader();
 	}
+
 
 	void Window::update(Size s){
 

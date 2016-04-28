@@ -171,6 +171,17 @@ namespace is{
 			return out;
 		}
 
+		template <typename T> 
+		static Image_info rgba(size_t w, size_t h){
+			Image_info out;
+			out.w = w;
+			out.h = h;
+			out.channel = 4;
+			out.bytes_per_row = 4*w*sizeof(T);
+			out.bytes_per_pixel = 4*sizeof(T);
+			return out;
+		}
+
 	};
 
 	enum struct Value_map{
@@ -201,4 +212,20 @@ namespace is{
 		//For internal. Don't use this.
 		invalid,
 	};
+
+	inline float abs(float x){
+		return fabs(x);
+	}
+	inline double abs(double x){
+		return abs(x);
+	}
+	inline uint8_t abs(uint8_t x){
+		return x;
+	}
+	inline uint8_t abs(uint16_t x){
+		return x;
+	}
+	inline size_t abs(size_t x){
+		return x;
+	}
 }
