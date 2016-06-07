@@ -9,8 +9,10 @@
 #include <openGL/gl.h>
 #include <GLUT/glut.h>
 #else
-#include <GL/gl.h>
+#define GL_GLEXT_PROTOTYPES
 #include <GL/glut.h>
+#include <GL/gl.h>
+#include <GL/glext.h>
 #endif
 
 #include <ft2build.h>

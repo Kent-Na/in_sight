@@ -87,6 +87,7 @@ namespace is{
 		FT_Error error;
 		error = FT_Init_FreeType(&lib);
 		const char* font_name[] = {
+            "/usr/share/fonts/adobe-source-code-pro/SourceCodePro-Regular.otf",
 			"/usr/share/fonts/TTF/DejaVuSans.ttf",
 			"/System/Library/Fonts/Helvetica.dfont",
 		};
