@@ -217,7 +217,7 @@ namespace is{
 		return fabs(x);
 	}
 	inline double abs(double x){
-		return abs(x);
+		return ::abs(x);
 	}
 	inline uint8_t abs(uint8_t x){
 		return x;

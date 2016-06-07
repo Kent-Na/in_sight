@@ -277,8 +277,8 @@ namespace is{
 	public:
 		typedef T Value_type;
 	private:
-        int32_t idx_start_x;
-        int32_t idx_start_y;
+        int32_t _idx_start_x;
+        int32_t _idx_start_y;
 	protected:
 		std::string _scale_name_x;
 		std::string _scale_name_y;
@@ -301,8 +301,8 @@ namespace is{
     public:
 		
 		void init(){
-            idx_start_x = 0;
-            idx_start_y = 0;
+            _idx_start_x = 0;
+            _idx_start_y = 0;
 			_scale_name_x = "x";
 			_scale_name_y = "y";
 			_value_map = Value_map::invalid;
@@ -434,6 +434,26 @@ namespace is{
 			return is.w;
 		}
 
+        size_t idx_start_x() const{
+            return std::max<int32_t>(0, std::min<int32_t>(
+                _data->image_size().w, _idx_start_x));
+        }
+        size_t idx_start_y() const{
+            return std::max<int32_t>(0, std::min<int32_t>(
+                _data->image_size().h, _idx_start_y));
+        }
+        size_t idx_end_x() const{
+            Rect f = contents_frame();
+            return std::max<int32_t>(0, std::min<int32_t>(
+                _data->image_size().w, _idx_start_x+f.s.w));
+        }
+        size_t idx_end_y() const{
+            Rect f = contents_frame();
+            return std::max<int32_t>(0, std::min<int32_t>(
+                _data->image_size().h, _idx_start_y+f.s.h));
+        }
+
+
         void update_image(Core *c, Size s){
 			Size is = _data->image_size();
 			Size vs(std::min(s.w,is.w),std::min(s.h,is.h));
@@ -442,10 +462,10 @@ namespace is{
 				c->argb_mode();
 			glColor4d(1,1,1,1);
 
-            const int ix_min = idx_start_x;
-            const int iy_min = idx_start_y;
-            const int ix_max = idx_start_x+vs.w;
-            const int iy_max = idx_start_y+vs.h;
+            const int ix_min = idx_start_x();
+            const int iy_min = idx_start_y();
+            const int ix_max = idx_end_x();
+            const int iy_max = idx_end_y();
 
 			const int t_size = Data_2d_tile::max_tile_size;
 
@@ -493,8 +513,8 @@ namespace is{
 			glColor4d(1,1,1,1);
 			std::string &s_name_x = _scale_name_x;
 			std::string &s_name_y = _scale_name_y;
-			size_t forcused_idx_vx = c->get_scale(s_name_x)-idx_start_x;
-			size_t forcused_idx_vy = c->get_scale(s_name_y)-idx_start_y;
+			size_t forcused_idx_vx = c->get_scale(s_name_x)-idx_start_x();
+			size_t forcused_idx_vy = c->get_scale(s_name_y)-idx_start_y();
 
             double g_delta = 8;
 
@@ -546,7 +566,7 @@ namespace is{
 		void update_header_str(Core *c, Size s) const{
 			Size is = _data->image_size();
 			Size vs(std::min(s.w,is.w),std::min(s.h,is.h));
-			Size is_end(idx_start_x+vs.w, idx_start_y+vs.h);
+			Size is_end(idx_end_x(), idx_end_y());
 			std::stringstream s_s;
 
 			auto name = _data->name();
@@ -570,8 +590,8 @@ namespace is{
 				s_s << "OOB";
 			}
 
-            s_s << "{" << idx_start_x << "-" << is_end.w 
-				<< "," << idx_start_y << "-" << is_end.h
+            s_s << "{" << idx_start_x() << "-" << is_end.w 
+				<< "," << idx_start_y() << "-" << is_end.h
 				<< "}";
 
 			std::string str = s_s.str();
@@ -592,12 +612,12 @@ namespace is{
 			//x
 			{
 				Point sp = {s.w - ss.w, 1};
-				draw_seek_bar(sp, ss, is.w, idx_start_x, idx_start_x+vs.w);
+				draw_seek_bar(sp, ss, is.w, idx_start_x(), idx_end_x());
 			}
 			//y
 			{
 				Point sp = {s.w - ss.w, 1+12/2};
-				draw_seek_bar(sp, ss, is.h, idx_start_y, idx_start_y+vs.h);
+				draw_seek_bar(sp, ss, is.h, idx_start_y(), idx_end_x());
 			}
 		}
 		void mouse_move(Core *c, Event* e){
@@ -608,70 +628,74 @@ namespace is{
 			Point p = cursor_in_view_coord(e);
 			std::string &s_name_x = _scale_name_x;
 			std::string &s_name_y = _scale_name_y;
-			c->set_scale(s_name_x, idx_start_x+p.x);
-			c->set_scale(s_name_y, idx_start_y+p.y);
+			c->set_scale(s_name_x, idx_start_x()+p.x);
+			c->set_scale(s_name_y, idx_start_y()+p.y);
 
 			if (_h_slice_data){
-				_h_slice_data->y(idx_start_y+p.y);
+				_h_slice_data->y(idx_start_y()+p.y);
 			}
 		}
         void scroll(Core* c, Event* e, int32_t dx, int32_t dy, int32_t dz){
 			Rect f = contents_frame();
 
-			if ((int32_t)idx_start_x < -dx)
-				idx_start_x = 0;
+			if ((int32_t)_idx_start_x < -dx)
+				_idx_start_x = 0;
 			else
-				idx_start_x += dx;
+				_idx_start_x += dx;
 
-			if ((int32_t)idx_start_y < -dy)
-				idx_start_y = 0;
+			if ((int32_t)_idx_start_y < -dy)
+				_idx_start_y = 0;
 			else
-				idx_start_y += dy;
+				_idx_start_y += dy;
 
 			Size is = _data->image_size();
 
-			if (idx_start_x+f.s.w > is.w)
-				idx_start_x = is.w-f.s.w;
-            if (idx_start_y+f.s.h > is.h)
-                idx_start_y = is.h-f.s.h;
+			if (_idx_start_x+f.s.w > is.w)
+				_idx_start_x = is.w-f.s.w;
+            if (_idx_start_y+f.s.h > is.h)
+                _idx_start_y = is.h-f.s.h;
 
 			if (is.w<f.s.w)
-				idx_start_x = 0;
+				_idx_start_x = 0;
 			if (is.h<f.s.h)
-				idx_start_y = 0;
+				_idx_start_y = 0;
 
 			mouse_move(c, e);
 
-			e->window()->scroll_to(_scale_name_x, idx_start_x);
-			e->window()->scroll_to(_scale_name_y, idx_start_y);
+			e->window()->scroll_to(_scale_name_x, _idx_start_x);
+			e->window()->scroll_to(_scale_name_y, _idx_start_y);
 		}
 		void scroll_to(Core *c, Event *e, std::string name, int32_t value){
 			Rect f = contents_frame();
 			Size is = _data->image_size();
 			if (name == _scale_name_x){
-				idx_start_x = value;
-				if (idx_start_x < 0)
-					idx_start_x = 0;
-				if (idx_start_x+f.s.w > is.w){
+				_idx_start_x = value;
+				if (_idx_start_x < 0)
+					_idx_start_x = 0;
+				if (_idx_start_x+f.s.w > is.w){
 					if (is.w<f.s.w)
-						idx_start_x = 0;
+						_idx_start_x = 0;
 					else
-						idx_start_x = is.w-f.s.w;
+						_idx_start_x = is.w-f.s.w;
 				}
 			}
 			if (name == _scale_name_y){
-				idx_start_y = value;
-				if (idx_start_y < 0)
-					idx_start_y = 0;
-				if (idx_start_y+f.s.h > is.h){
+				_idx_start_y = value;
+				if (_idx_start_y < 0)
+					_idx_start_y = 0;
+				if (_idx_start_y+f.s.h > is.h){
 					if (is.h<f.s.h)
-						idx_start_y = 0;
+						_idx_start_y = 0;
 					else
-						idx_start_x = is.h-f.s.h;
+						_idx_start_x = is.h-f.s.h;
 				}
 			}
 		}
 	};
-
-
+    
+    template <typename T>
+    auto view_2d_grayscale(Core *c,T *d, size_t w, size_t h)->View_2d<T>*{
+        auto info = Image_info::grayscale<T>(w, h);
+        return new View_2d<T>(c, d, &info);
+    }
 }
