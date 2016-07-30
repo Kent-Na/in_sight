@@ -73,7 +73,15 @@ namespace GLUT{
 		glutSwapBuffers();
 	}
 
+    int f_passive_motion;
 	void passive_motion(int x, int y){
+        if (f_passive_motion){
+            f_passive_motion = 0;
+            return;
+        }
+        else{
+            f_passive_motion = 1;
+        }
 		int window_id = glutGetWindow();
 		Window *window = window_map[window_id];
 
@@ -113,7 +121,7 @@ namespace GLUT{
 		int old_window_id = glutGetWindow();
 
 		glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
-		glutInitWindowSize(640, 480);
+		glutInitWindowSize(1800, 1000);
 		glutCreateWindow("In side of my brain");
 
 		int window_id = glutGetWindow();

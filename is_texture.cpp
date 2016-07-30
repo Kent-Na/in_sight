@@ -87,10 +87,13 @@ namespace is{
 		FT_Error error;
 		error = FT_Init_FreeType(&lib);
 		const char* font_name[] = {
+            "/usr/share/fonts/adobe-source-code-pro/SourceCodePro-Regular.otf",
 			"/usr/share/fonts/TTF/DejaVuSans.ttf",
 			"/System/Library/Fonts/Helvetica.dfont",
+			NULL,
 		};
-		for (int i=0; i<2; i++){
+
+		for (int i=0; font_name[i] != NULL; i++){
 			error = FT_New_Face(lib, font_name[i], 0, &face);
 			if (error == 0)
 				return;
