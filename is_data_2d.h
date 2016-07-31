@@ -617,7 +617,7 @@ namespace is{
 			//y
 			{
 				Point sp = {s.w - ss.w, 1+12/2};
-				draw_seek_bar(sp, ss, is.h, idx_start_y(), idx_end_x());
+				draw_seek_bar(sp, ss, is.h, idx_start_y(), idx_end_y());
 			}
 		}
 		void mouse_move(Core *c, Event* e){
@@ -687,7 +687,7 @@ namespace is{
 					if (is.h<f.s.h)
 						_idx_start_y = 0;
 					else
-						_idx_start_x = is.h-f.s.h;
+						_idx_start_y = is.h-f.s.h;
 				}
 			}
 		}
