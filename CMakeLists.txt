@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
+set(CMAKE_CXX_STANDARD 11)
 set(SRC 
 	"is_core.cpp"
 	"is_glut.cpp"
@@ -9,7 +10,7 @@ set(SRC
 	"is_view.cpp"
 	"is_layouter.cpp")
 
-add_executable(main ${SRC} "simple_2d_test.cpp")
+add_executable(main ${SRC} "main.cpp")
 
 find_package(Freetype REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -21,6 +22,7 @@ target_include_directories(main PUBLIC
     ${GLUT_INCLUDE_DIRS})
 
 target_link_libraries(main 
+    jsoncpp
     ${FREETYPE_LIBRARIES}
     ${OPENGL_LIBRARIES} 
     ${GLUT_LIBRARY})
