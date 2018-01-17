@@ -15,26 +15,23 @@ set(SRC
 	"src/is_view.cpp"
 	"src/is_layouter.cpp")
 
-set(INSIGHT_INCLUDE_DIRS
-    include
+set(INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
     ${FREETYPE_INCLUDE_DIRS}
     ${OPENGL_INCLUDE_DIRS} 
     ${GLUT_INCLUDE_DIRS})
 
 set(LIBS
-    jsoncpp
     ${FREETYPE_LIBRARIES}
     ${OPENGL_LIBRARIES} 
     ${GLUT_LIBRARY})
 
+set(INSIGHT_INCLUDE_DIRS ${INCLUDE_DIRS} PARENT_SCOPE)
+set(INSIGHT_DEPENDENCY_LIBRARIES ${LIBS} PARENT_SCOPE)
+
 add_library(in_sight_obj OBJECT ${SRC})
-target_include_directories(in_sight_obj PUBLIC ${INSIGHT_INCLUDE_DIRS})
-#target_link_libraries(in_sight_obj PUBLIC ${LIBS})
+target_include_directories(in_sight_obj PUBLIC ${INCLUDE_DIRS})
 
 add_library(in_sight $<TARGET_OBJECTS:in_sight_obj>)
-target_include_directories(in_sight PUBLIC ${INSIGHT_INCLUDE_DIRS})
+target_include_directories(in_sight PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(in_sight PUBLIC ${LIBS})
-
-add_executable(main $<TARGET_OBJECTS:in_sight_obj> "main.cpp")
-target_include_directories(main PRIVATE ${INSIGHT_INCLUDE_DIRS})
-target_link_libraries(main PRIVATE ${LIBS})

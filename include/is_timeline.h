@@ -128,7 +128,7 @@ public:
     float _grid_interval;
 
     View(Core* c, Fragment fragment):
-        _data(new Data(fragment)), _grid_interval(100){ 
+        _data(new Data(fragment)), _grid_interval(0){ 
         c->add(this);
     }
     View(Core* c, const std::vector<Fragment> &fragments, std::string scale_name):
@@ -161,7 +161,7 @@ public:
     }
 
     void update_grid(Size s) const{
-        if (_grid_interval == 0){
+        if (_grid_interval < 10){
             color::grid();
             glBegin(GL_LINES);
             glVertex2d(0, 0);
