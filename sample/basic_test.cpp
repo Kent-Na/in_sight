@@ -1,6 +1,6 @@
 #include <math.h>
 //#include <functional>
-#include "../in_sight/in_sight.h"
+#include "in_sight.h"
 //#include "../tc_math/tc_math.h"
 
 

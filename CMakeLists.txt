@@ -35,3 +35,14 @@ target_include_directories(in_sight_obj PUBLIC ${INCLUDE_DIRS})
 add_library(in_sight $<TARGET_OBJECTS:in_sight_obj>)
 target_include_directories(in_sight PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(in_sight PUBLIC ${LIBS})
+
+add_executable(sample_basic $<TARGET_OBJECTS:in_sight_obj> "sample/basic_test.cpp")
+target_include_directories(sample_basic PUBLIC ${INCLUDE_DIRS})
+target_link_libraries(sample_basic PUBLIC ${LIBS})
+
+add_executable(sample_2d $<TARGET_OBJECTS:in_sight_obj> "sample/simple_2d_test.cpp")
+target_include_directories(sample_2d PUBLIC ${INCLUDE_DIRS})
+target_link_libraries(sample_2d PUBLIC ${LIBS})
+
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/script/autobuild.sh" 
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

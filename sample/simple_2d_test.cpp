@@ -1,7 +1,5 @@
 #include <math.h>
 #include "in_sight.h"
-//#include "sub_systems/BnFFT.h"
-//#include "sub_systems/DcVector.h"
 
 int main(int argc, char** argv)
 {
